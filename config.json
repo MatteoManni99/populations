@@ -1,13 +1,13 @@
 {
     "width": 500,
     "height": 500,
-    "speed": 10,
     "num_boxes": 3,
     "box": {
         "width": 50,
         "height": 50,
         "color": "#FF0000",
         "borderColor": "#000000",
-        "borderWidth": 2
+        "borderWidth": 2,
+        "speed": 5
     }
 }
