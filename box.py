@@ -13,8 +13,10 @@ class Box:
             fill=config["box"]["color"]
         )
         self.speed = config["box"]["speed"]
-    
+        self.prev_direction = None
+
     def move(self, direction):
+        self.prev_direction = direction
         if direction == "right":
             self.corners[0] += self.speed
             self.corners[2] += self.speed
@@ -36,3 +38,6 @@ class Box:
             self.corners[2],
             self.corners[3]
         )
+
+    def change_color(self, color):
+        self.canvas.itemconfig(self.box, fill=color)

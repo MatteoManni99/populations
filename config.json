@@ -1,13 +1,14 @@
 {
-    "width": 500,
+    "width": 1000,
     "height": 500,
-    "num_boxes": 3,
+    "num_boxes": 20,
     "box": {
-        "width": 50,
-        "height": 50,
+        "width": 20,
+        "height": 20,
         "color": "#FF0000",
         "borderColor": "#000000",
         "borderWidth": 2,
-        "speed": 5
-    }
+        "speed": 2
+    },
+    "colors": ["red", "green", "blue", "yellow", "purple", "orange", "pink", "cyan", "magenta", "brown", "black", "white", "gray", "lightblue", "lightgreen"]
 }
