@@ -1,8 +1,9 @@
+import random
 
 class Box:
-    def __init__(self, canvas, x, y, config):
-        self.width = config["box"]["width"]
-        self.height = config["box"]["height"]
+    def __init__(self, canvas, x, y, config, config_item):
+        self.width = config_item["width"]
+        self.height = config_item["height"]
         self.corners = [x, y, x + self.width, y + self.height]
         self.canvas = canvas
         self.box = canvas.create_rectangle(
@@ -10,9 +11,11 @@ class Box:
             self.corners[1],
             self.corners[2],
             self.corners[3],
-            fill=config["box"]["color"]
+            fill=config_item["color"]
         )
-        self.speed = config["box"]["speed"]
+        self.speed = config_item["speed"]
+        self.possible_directions = config["possible_directions"]
+
         self.prev_direction = None
 
     def move(self, direction):
@@ -41,3 +44,13 @@ class Box:
 
     def change_color(self, color):
         self.canvas.itemconfig(self.box, fill=color)
+    
+    @staticmethod
+    def choose_direction(box, inertia_probability = 0.95):
+        if box.prev_direction is None:
+            return random.choice(box.possible_directions)
+        elif random.random() > inertia_probability:
+            return random.choice(box.possible_directions)
+        else:
+            return box.prev_direction
+        

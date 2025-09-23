@@ -1,14 +1,24 @@
 {
+    "ms_between_frames": 1,
     "width": 1000,
     "height": 500,
     "num_boxes": 1,
     "box": {
         "width": 20,
         "height": 20,
-        "color": "#FF0000",
-        "borderColor": "#000000",
+        "color": "red",
+        "borderColor": "black",
         "borderWidth": 2,
-        "speed": 2
+        "speed": 20
     },
+    "food": {
+        "width": 10,
+        "height": 10,
+        "color": "green",
+        "borderColor": "black",
+        "borderWidth": 1,
+        "prob_spawn": 0.1
+    },
+    "possible_directions": ["up", "down", "left", "right"],
     "colors": ["red", "green", "blue", "yellow", "purple", "orange", "pink", "cyan", "magenta", "brown", "black", "white", "gray", "lightblue", "lightgreen"]
 }

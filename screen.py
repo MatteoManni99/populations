@@ -1,6 +1,7 @@
 import random
 import tkinter as tk
 from box import Box
+from food import Food
 
 class MyScreen:
     def __init__(self, config):
@@ -18,12 +19,12 @@ class MyScreen:
         self.box_index = 0
         self.box_list = []
         for i in range(self.config["num_boxes"]):
-            self.box_list.append(Box(self.canvas, i*40, i*10, self.config))
+            self.box_list.append(Food(self.canvas, i*40, i*10, self.config, self.config["food"]))
 
         self.root.bind("<KeyPress>", self.key_press)
         self.root.bind("<KeyRelease>", self.key_release)
 
-        self.directions = ["up", "down", "left", "right"]
+        self.possible_directions = config["possible_directions"]
         self.config_colors = self.config["colors"]
         self.update()
 
@@ -56,14 +57,16 @@ class MyScreen:
 
     def update(self):
         for i, box in enumerate(self.box_list):
-            direction = self.choose_direction(box)
-            if self.check_collisions(direction, i) is False:
-                box.move(direction)
-            else:
-                box.change_color(random.choice(self.config_colors))
+            ## Auto-move boxes, 1 move every frame (update) ##
+            # direction = Box.choose_direction(box, inertia_probability=0.95)
+            # if self.check_collisions(direction, i) is False:
+            #     box.move(direction)
+            # else:
+            #     box.change_color(random.choice(self.config_colors))
             box.update()
+        
 
-        self.root.after(10, self.update) #(ms = , funztion = self.update)
+        self.root.after(self.config["ms_between_frames"], self.update) #(ms = , funztion = self.update)
 
     def run(self):
         self.root.mainloop()
@@ -119,10 +122,4 @@ class MyScreen:
         elif direction == "right":
             return box.corners[2] + box.speed > self.width
 
-    def choose_direction(self, box):
-        if box.prev_direction is None:
-            return random.choice(self.directions)
-        elif random.random() > 0.95:
-            return random.choice(self.directions)
-        else:
-            return box.prev_direction
+    
