@@ -70,43 +70,54 @@ class MyScreen:
 
     def check_collisions(self, direction, box_index):
         collision = False
+        collision |= self.check_border_collision(self.box_list[box_index], direction)
         for i, box in enumerate(self.box_list):
             if i != box_index:
-                collision |= self.check_collision(self.box_list[box_index], box, direction)
+                collision |= self.check_box_collision(self.box_list[box_index], box, direction)  
                 if collision: break
 
         return collision
     
-    def check_collision(self, box1, box2, direction):
+    def check_box_collision(self, box1, box2, direction):
         if direction == "up":
             return ((box2.corners[0] < box1.corners[0] and box1.corners[0] < box2.corners[2]) or \
                     (box2.corners[0] < box1.corners[2] and box1.corners[2] < box2.corners[2]) or\
                     (box2.corners[0] == box1.corners[0] and box1.corners[2] == box2.corners[2])) and \
                     box1.corners[1] - box1.speed < box2.corners[3] and \
-                    box1.corners[3] > box2.corners[1] or \
-                    box1.corners[1] - box1.speed < 0
+                    box1.corners[3] > box2.corners[1]
+                    
         elif direction == "down":
             return ((box2.corners[0] < box1.corners[0] and box1.corners[0] < box2.corners[2]) or \
                     (box2.corners[0] < box1.corners[2] and box1.corners[2] < box2.corners[2]) or \
                     (box2.corners[0] == box1.corners[0] and box1.corners[2] == box2.corners[2])) and \
                     box1.corners[3] + box1.speed > box2.corners[1] and \
-                    box1.corners[1] < box2.corners[3] or \
-                    box1.corners[3] + box1.speed > self.height
+                    box1.corners[1] < box2.corners[3]
+        
         elif direction == "left":
             return ((box2.corners[1] < box1.corners[1] and box1.corners[1] < box2.corners[3]) or \
                     (box2.corners[1] < box1.corners[3] and box1.corners[3] < box2.corners[3]) or \
                     (box2.corners[1] == box1.corners[1] and box1.corners[3] == box2.corners[3])) and \
                     box1.corners[0] - box1.speed < box2.corners[2] and \
-                    box1.corners[2] > box2.corners[0] or \
-                    box1.corners[0] - box1.speed < 0
+                    box1.corners[2] > box2.corners[0]
+        
         elif direction == "right":
             return ((box2.corners[1] < box1.corners[1] and box1.corners[1] < box2.corners[3]) or \
                     (box2.corners[1] < box1.corners[3] and box1.corners[3] < box2.corners[3]) or \
                     (box2.corners[1] == box1.corners[1] and box1.corners[3] == box2.corners[3])) and \
                     box1.corners[2] + box1.speed > box2.corners[0] and \
-                    box1.corners[0] < box2.corners[2] or \
-                    box1.corners[2] + box1.speed > self.width
-        return False
+                    box1.corners[0] < box2.corners[2]
+        
+        else: return False
+    
+    def check_border_collision(self, box, direction):
+        if direction == "up":
+            return box.corners[1] - box.speed < 0
+        elif direction == "down":
+            return box.corners[3] + box.speed > self.height
+        elif direction == "left":
+            return box.corners[0] - box.speed < 0
+        elif direction == "right":
+            return box.corners[2] + box.speed > self.width
 
     def choose_direction(self, box):
         if box.prev_direction is None:

@@ -1,7 +1,7 @@
 {
     "width": 1000,
     "height": 500,
-    "num_boxes": 20,
+    "num_boxes": 1,
     "box": {
         "width": 20,
         "height": 20,
