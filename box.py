@@ -53,4 +53,53 @@ class Box:
             return random.choice(box.possible_directions)
         else:
             return box.prev_direction
+    
+    @staticmethod
+    def check_box_collision(box1, box2, direction):
+        if direction == "up":
+            return ((box2.corners[0] < box1.corners[0] and box1.corners[0] < box2.corners[2]) or \
+                    (box2.corners[0] < box1.corners[2] and box1.corners[2] < box2.corners[2]) or\
+                    (box2.corners[0] == box1.corners[0] and box1.corners[2] == box2.corners[2]) or\
+                    (box1.corners[0] <= box2.corners[0] and box1.corners[2] >= box2.corners[2])) and \
+                    box1.corners[1] - box1.speed < box2.corners[3] and \
+                    box1.corners[3] > box2.corners[1]
+                    
+        elif direction == "down":
+            return ((box2.corners[0] < box1.corners[0] and box1.corners[0] < box2.corners[2]) or \
+                    (box2.corners[0] < box1.corners[2] and box1.corners[2] < box2.corners[2]) or \
+                    (box2.corners[0] == box1.corners[0] and box1.corners[2] == box2.corners[2])or \
+                    (box1.corners[0] <= box2.corners[0] and box1.corners[2] >= box2.corners[2])) and \
+                    box1.corners[3] + box1.speed > box2.corners[1] and \
+                    box1.corners[1] < box2.corners[3]
+        
+        elif direction == "left":
+            return ((box2.corners[1] < box1.corners[1] and box1.corners[1] < box2.corners[3]) or \
+                    (box2.corners[1] < box1.corners[3] and box1.corners[3] < box2.corners[3]) or \
+                    (box2.corners[1] == box1.corners[1] and box1.corners[3] == box2.corners[3]) or \
+                    (box1.corners[1] <= box2.corners[1] and box1.corners[3] >= box2.corners[3])) and \
+                    box1.corners[0] - box1.speed < box2.corners[2] and \
+                    box1.corners[2] > box2.corners[0]
+        
+        elif direction == "right":
+            return ((box2.corners[1] < box1.corners[1] and box1.corners[1] < box2.corners[3]) or \
+                    (box2.corners[1] < box1.corners[3] and box1.corners[3] < box2.corners[3]) or \
+                    (box2.corners[1] == box1.corners[1] and box1.corners[3] == box2.corners[3]) or \
+                    (box1.corners[1] <= box2.corners[1] and box1.corners[3] >= box2.corners[3])) and \
+                    box1.corners[2] + box1.speed > box2.corners[0] and \
+                    box1.corners[0] < box2.corners[2]
+        
+        else: return False
+    
+    @staticmethod
+    def check_border_collision(box, direction, width, height):
+        if direction == "up":
+            return box.corners[1] - box.speed < 0
+        elif direction == "down":
+            return box.corners[3] + box.speed > height
+        elif direction == "left":
+            return box.corners[0] - box.speed < 0
+        elif direction == "right":
+            return box.corners[2] + box.speed > width
+        
+    
         

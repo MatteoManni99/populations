@@ -1,6 +1,7 @@
 import random
+from box import Box
 
-class Food:
+class Food(Box):
     def __init__(self, canvas, x, y, config, config_item):
         self.width = config_item["width"]
         self.height = config_item["height"]
@@ -13,7 +14,6 @@ class Food:
             self.corners[3],
             fill=config_item["color"]
         )
-
         self.prev_direction = None
 
     def update(self):
@@ -24,3 +24,15 @@ class Food:
             self.corners[2],
             self.corners[3]
         )
+    
+    @staticmethod
+    def random_position(config):
+        x = random.randint(0, config["width"] - config["food"]["width"])
+        y = random.randint(0, config["height"] - config["food"]["height"])
+        return x, y
+    
+    @staticmethod
+    def spawn_food_event(canvas, config):
+        x, y = Food.random_position(config)
+        return Food(canvas, x, y, config, config["food"])
+      

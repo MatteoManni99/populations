@@ -1,4 +1,5 @@
 import random
+import time
 import tkinter as tk
 from box import Box
 from food import Food
@@ -18,14 +19,16 @@ class MyScreen:
         self.canvas.pack()
         self.box_index = 0
         self.box_list = []
+        self.food_list = []
         for i in range(self.config["num_boxes"]):
-            self.box_list.append(Food(self.canvas, i*40, i*10, self.config, self.config["food"]))
+            self.box_list.append(Box(self.canvas, i*40, i*10, self.config, self.config["box"]))
 
         self.root.bind("<KeyPress>", self.key_press)
         self.root.bind("<KeyRelease>", self.key_release)
 
         self.possible_directions = config["possible_directions"]
         self.config_colors = self.config["colors"]
+        self.last_update_time = time.time()
         self.update()
 
     def key_press(self, event):
@@ -64,8 +67,14 @@ class MyScreen:
             # else:
             #     box.change_color(random.choice(self.config_colors))
             box.update()
+            
+        #Spawn food randomly
+        elapsed = time.time() - self.last_update_time
+        if elapsed >= self.config["food"]["spawn_rate"]:
+            food = Food.spawn_food_event(self.canvas, self.config)
+            self.food_list.append(food)
+            self.last_update_time = time.time()
         
-
         self.root.after(self.config["ms_between_frames"], self.update) #(ms = , funztion = self.update)
 
     def run(self):
@@ -73,53 +82,22 @@ class MyScreen:
 
     def check_collisions(self, direction, box_index):
         collision = False
-        collision |= self.check_border_collision(self.box_list[box_index], direction)
+        collision |= Box.check_border_collision(self.box_list[box_index], direction, self.width, self.height)
         for i, box in enumerate(self.box_list):
             if i != box_index:
-                collision |= self.check_box_collision(self.box_list[box_index], box, direction)  
+                collision |= Box.check_box_collision(self.box_list[box_index], box, direction)  
                 if collision: break
+
+        if collision is False:
+            for i, food in enumerate(self.food_list):
+                if Box.check_box_collision(self.box_list[box_index], food, direction):
+                    self.box_list[box_index].change_color(random.choice(self.config_colors))
+                    self.canvas.delete(food.box)
+                    del self.food_list[i]
+                    break
 
         return collision
     
-    def check_box_collision(self, box1, box2, direction):
-        if direction == "up":
-            return ((box2.corners[0] < box1.corners[0] and box1.corners[0] < box2.corners[2]) or \
-                    (box2.corners[0] < box1.corners[2] and box1.corners[2] < box2.corners[2]) or\
-                    (box2.corners[0] == box1.corners[0] and box1.corners[2] == box2.corners[2])) and \
-                    box1.corners[1] - box1.speed < box2.corners[3] and \
-                    box1.corners[3] > box2.corners[1]
-                    
-        elif direction == "down":
-            return ((box2.corners[0] < box1.corners[0] and box1.corners[0] < box2.corners[2]) or \
-                    (box2.corners[0] < box1.corners[2] and box1.corners[2] < box2.corners[2]) or \
-                    (box2.corners[0] == box1.corners[0] and box1.corners[2] == box2.corners[2])) and \
-                    box1.corners[3] + box1.speed > box2.corners[1] and \
-                    box1.corners[1] < box2.corners[3]
-        
-        elif direction == "left":
-            return ((box2.corners[1] < box1.corners[1] and box1.corners[1] < box2.corners[3]) or \
-                    (box2.corners[1] < box1.corners[3] and box1.corners[3] < box2.corners[3]) or \
-                    (box2.corners[1] == box1.corners[1] and box1.corners[3] == box2.corners[3])) and \
-                    box1.corners[0] - box1.speed < box2.corners[2] and \
-                    box1.corners[2] > box2.corners[0]
-        
-        elif direction == "right":
-            return ((box2.corners[1] < box1.corners[1] and box1.corners[1] < box2.corners[3]) or \
-                    (box2.corners[1] < box1.corners[3] and box1.corners[3] < box2.corners[3]) or \
-                    (box2.corners[1] == box1.corners[1] and box1.corners[3] == box2.corners[3])) and \
-                    box1.corners[2] + box1.speed > box2.corners[0] and \
-                    box1.corners[0] < box2.corners[2]
-        
-        else: return False
     
-    def check_border_collision(self, box, direction):
-        if direction == "up":
-            return box.corners[1] - box.speed < 0
-        elif direction == "down":
-            return box.corners[3] + box.speed > self.height
-        elif direction == "left":
-            return box.corners[0] - box.speed < 0
-        elif direction == "right":
-            return box.corners[2] + box.speed > self.width
 
     
