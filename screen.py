@@ -52,7 +52,6 @@ class MyScreen:
             if self.check_collisions("up", self.box_index) is False:
                 self.box_list[self.box_index].move("up")
 
-        
     def key_release(self, event):
         key = event.keysym.lower()
         # if key in ["a", "d"]: self.box_list[self.box_index].dx = 0
@@ -70,7 +69,7 @@ class MyScreen:
             
         #Spawn food randomly
         elapsed = time.time() - self.last_update_time
-        if elapsed >= self.config["food"]["spawn_rate"]:
+        if elapsed >= self.config["food"]["spawn_rate_sec"]:
             food = Food.spawn_food_event(self.canvas, self.config)
             self.food_list.append(food)
             self.last_update_time = time.time()
@@ -89,9 +88,11 @@ class MyScreen:
                 if collision: break
 
         if collision is False:
+            # Check food collisions
+            #TODO: the box should eat multiple food items in one move
             for i, food in enumerate(self.food_list):
                 if Box.check_box_collision(self.box_list[box_index], food, direction):
-                    self.box_list[box_index].change_color(random.choice(self.config_colors))
+                    self.box_list[box_index].eat_food()
                     self.canvas.delete(food.box)
                     del self.food_list[i]
                     break

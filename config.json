@@ -17,7 +17,7 @@
         "color": "green",
         "borderColor": "black",
         "borderWidth": 1,
-        "spawn_rate": 2
+        "spawn_rate_sec": 0.1
     },
     "possible_directions": ["up", "down", "left", "right"],
     "colors": ["red", "green", "blue", "yellow", "purple", "orange", "pink", "cyan", "magenta", "brown", "black", "white", "gray", "lightblue", "lightgreen"]

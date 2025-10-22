@@ -15,7 +15,7 @@ class Box:
         )
         self.speed = config_item["speed"]
         self.possible_directions = config["possible_directions"]
-
+        self.score = 0
         self.prev_direction = None
 
     def move(self, direction):
@@ -100,6 +100,16 @@ class Box:
             return box.corners[0] - box.speed < 0
         elif direction == "right":
             return box.corners[2] + box.speed > width
-        
     
+    def eat_food(self):
+        self.change_dimensions(self.width + 2, self.height + 2)
+        self.score += 1
+    
+    def change_dimensions(self, new_width, new_height):
+        # TODO: Center the box when changing dimensions
+        self.width = new_width
+        self.height = new_height
+        self.corners[2] = self.corners[0] + self.width
+        self.corners[3] = self.corners[1] + self.height
+        self.update()
         
