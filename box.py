@@ -1,9 +1,12 @@
 import random
 
 class Box:
-    def __init__(self, canvas, x, y, config, config_item):
-        self.width = config_item["width"]
-        self.height = config_item["height"]
+    def __init__(self, canvas, x, y, config, config_box):
+        self.width = config_box["width"]
+        self.height = config_box["height"]
+        self.growth_width_limit = config_box["growth_width_limit"]
+        self.growth_height_limit = config_box["growth_height_limit"]
+        
         self.corners = [x, y, x + self.width, y + self.height]
         self.canvas = canvas
         self.box = canvas.create_rectangle(
@@ -11,9 +14,9 @@ class Box:
             self.corners[1],
             self.corners[2],
             self.corners[3],
-            fill=config_item["color"]
+            fill=config_box["color"]
         )
-        self.speed = config_item["speed"]
+        self.speed = config_box["speed"]
         self.possible_directions = config["possible_directions"]
         self.score = 0
         self.prev_direction = None
@@ -107,9 +110,11 @@ class Box:
     
     def change_dimensions(self, new_width, new_height):
         # TODO: Center the box when changing dimensions
-        self.width = new_width
-        self.height = new_height
-        self.corners[2] = self.corners[0] + self.width
-        self.corners[3] = self.corners[1] + self.height
+        if new_width <= self.growth_width_limit:
+            self.width = new_width
+            self.corners[2] = self.corners[0] + self.width
+        if new_height <= self.growth_height_limit:
+            self.height = new_height
+            self.corners[3] = self.corners[1] + self.height
         self.update()
         

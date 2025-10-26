@@ -28,7 +28,10 @@ class MyScreen:
 
         self.possible_directions = config["possible_directions"]
         self.config_colors = self.config["colors"]
-        self.last_update_time = time.time()
+        self.random_walk = self.config["box_random_walk"]
+        print("Random walk:", self.random_walk)
+        self.last_update_time_spawn_food = time.time()
+        self.last_update_time_move = time.time()
         self.update()
 
     def key_press(self, event):
@@ -58,22 +61,30 @@ class MyScreen:
         # if key in ["w", "s"]: self.box_list[self.box_index].dy = 0
 
     def update(self):
-        for i, box in enumerate(self.box_list):
-            ## Auto-move boxes, 1 move every frame (update) ##
-            # direction = Box.choose_direction(box, inertia_probability=0.95)
-            # if self.check_collisions(direction, i) is False:
-            #     box.move(direction)
-            # else:
-            #     box.change_color(random.choice(self.config_colors))
-            box.update()
+        
+        ## Auto-move boxes, 1 move every frame (update) ##
+        if self.random_walk:
+            elapsed = time.time() - self.last_update_time_move
+            if elapsed >= self.config["box"]["move_rate_sec"]:
+                self.last_update_time_move = time.time()
+                for i, box in enumerate(self.box_list):
+                    direction = Box.choose_direction(box, inertia_probability=0.95)
+                    if self.check_collisions(direction, i) is False:
+                        box.move(direction)
+                    else:
+                        # Collision detected, choose a new direction
+                        new_direction = Box.choose_direction(box, inertia_probability=0.0)
+                        if self.check_collisions(new_direction, i) is False:
+                            box.move(new_direction)
+                    box.update()
             
         #Spawn food randomly
-        elapsed = time.time() - self.last_update_time
+        elapsed = time.time() - self.last_update_time_spawn_food
         if elapsed >= self.config["food"]["spawn_rate_sec"]:
+            self.last_update_time_spawn_food = time.time()
             food = Food.spawn_food_event(self.canvas, self.config)
             self.food_list.append(food)
-            self.last_update_time = time.time()
-        
+
         self.root.after(self.config["ms_between_frames"], self.update) #(ms = , funztion = self.update)
 
     def run(self):
@@ -86,7 +97,8 @@ class MyScreen:
             if i != box_index:
                 collision |= Box.check_box_collision(self.box_list[box_index], box, direction)  
                 if collision: break
-
+        
+        #TODO: rimuovere il rischio che post mangiata il box si trovi dentro un altro box
         if collision is False:
             # Check food collisions
             #TODO: the box should eat multiple food items in one move

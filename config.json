@@ -2,14 +2,17 @@
     "ms_between_frames": 1,
     "width": 1000,
     "height": 500,
-    "num_boxes": 1,
+    "num_boxes": 20,
     "box": {
         "width": 20,
         "height": 20,
         "color": "red",
         "borderColor": "black",
         "borderWidth": 2,
-        "speed": 20
+        "speed": 10,
+        "growth_width_limit": 200,
+        "growth_height_limit": 200,
+        "move_rate_sec": 0.10
     },
     "food": {
         "width": 10,
@@ -19,6 +22,7 @@
         "borderWidth": 1,
         "spawn_rate_sec": 0.1
     },
+    "box_random_walk": true,
     "possible_directions": ["up", "down", "left", "right"],
     "colors": ["red", "green", "blue", "yellow", "purple", "orange", "pink", "cyan", "magenta", "brown", "black", "white", "gray", "lightblue", "lightgreen"]
 }
