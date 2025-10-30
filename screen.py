@@ -29,11 +29,11 @@ class MyScreen:
         self.possible_directions = config["possible_directions"]
         self.config_colors = self.config["colors"]
         self.random_walk = self.config["box_random_walk"]
-        print("Random walk:", self.random_walk)
         self.last_update_time_spawn_food = time.time()
         self.last_update_time_move = time.time()
         self.update()
-
+        print("settaggi buoni: ", self.good_time_settings())
+    
     def key_press(self, event):
         key = event.keysym.lower()
 
@@ -76,7 +76,7 @@ class MyScreen:
                         new_direction = Box.choose_direction(box, inertia_probability=0.0)
                         if self.check_collisions(new_direction, i) is False:
                             box.move(new_direction)
-                    box.update()
+                    box.box_update()
             
         #Spawn food randomly
         elapsed = time.time() - self.last_update_time_spawn_food
@@ -85,7 +85,7 @@ class MyScreen:
             food = Food.spawn_food_event(self.canvas, self.config)
             self.food_list.append(food)
 
-        self.root.after(self.config["ms_between_frames"], self.update) #(ms = , funztion = self.update)
+        self.root.after(ms = self.config["ms_between_frames"], func = self.update) #(ms = , funztion = self.update)
 
     def run(self):
         self.root.mainloop()
@@ -110,6 +110,22 @@ class MyScreen:
                     break
 
         return collision
+    
+    def good_time_settings(self):
+        if(
+            self.config["food"]["spawn_rate_sec"]*1000 % self.config["ms_between_frames"] == 0 and \
+            self.config["food"]["spawn_rate_sec"]*1000 >= self.config["ms_between_frames"] and \
+            self.config["box"]["move_rate_sec"]*1000 % self.config["ms_between_frames"] == 0 and \
+            self.config["box"]["move_rate_sec"]*1000 >= self.config["ms_between_frames"] \
+            
+        ):
+            print(self.config["food"]["spawn_rate_sec"]*1000 % self.config["ms_between_frames"])
+            print(self.config["box"]["move_rate_sec"]*1000, self.config["ms_between_frames"])
+            return True
+        else:
+            print(self.config["food"]["spawn_rate_sec"]*1000 % self.config["ms_between_frames"])
+            print(self.config["box"]["move_rate_sec"]*1000, self.config["ms_between_frames"])
+            return False
     
     
 

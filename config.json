@@ -1,5 +1,5 @@
 {
-    "ms_between_frames": 1,
+    "ms_between_frames": 50,
     "width": 1000,
     "height": 500,
     "num_boxes": 20,
@@ -20,7 +20,7 @@
         "color": "green",
         "borderColor": "black",
         "borderWidth": 1,
-        "spawn_rate_sec": 0.1
+        "spawn_rate_sec": 0.40
     },
     "box_random_walk": true,
     "possible_directions": ["up", "down", "left", "right"],

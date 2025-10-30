@@ -36,7 +36,7 @@ class Box:
             self.corners[1] += self.speed
             self.corners[3] += self.speed
     
-    def update(self):
+    def box_update(self):
         self.canvas.coords(
             self.box,
             self.corners[0],
@@ -116,5 +116,5 @@ class Box:
         if new_height <= self.growth_height_limit:
             self.height = new_height
             self.corners[3] = self.corners[1] + self.height
-        self.update()
+        self.box_update()
         
