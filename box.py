@@ -6,20 +6,40 @@ class Box:
         self.height = config_box["height"]
         self.growth_width_limit = config_box["growth_width_limit"]
         self.growth_height_limit = config_box["growth_height_limit"]
-        
-        self.coord = [x, y, x + self.width, y + self.height]
+        self.vision_range = config_box["vision_range"]
         self.canvas = canvas
+        self.default_color = config_box["color"]
+        self.coord = [x, y, x + self.width, y + self.height]
+        self.center = ((self.coord[0] + self.coord[2]) / 2, (self.coord[1] + self.coord[3]) / 2)
         self.box = canvas.create_rectangle(
             self.coord[0],
             self.coord[1],
             self.coord[2],
             self.coord[3],
-            fill=config_box["color"]
+            fill=self.default_color
         )
+        if (config["plot_vision_range"]):
+            self.vision_circle = canvas.create_oval(
+                self.center[0] - self.vision_range,
+                self.center[1] - self.vision_range,
+                self.center[0] + self.vision_range,
+                self.center[1] + self.vision_range,
+                outline="lightgrey"
+            )
+        else:
+            self.vision_circle = None
+        self.corners = [
+            (self.coord[0], self.coord[1]),  # top-left
+            (self.coord[2], self.coord[1]),  # top-right
+            (self.coord[0], self.coord[3]),  # bottom-left
+            (self.coord[2], self.coord[3])   # bottom-right
+        ]
+
+        self.manual_control = False
         self.speed = config_box["speed"]
         self.possible_directions = config["possible_directions"]
+        self.prev_direction = random.choice(self.possible_directions)
         self.score = 0
-        self.prev_direction = None
 
     def move(self, direction):
         self.prev_direction = direction
@@ -35,6 +55,9 @@ class Box:
         elif direction == "down":
             self.coord[1] += self.speed
             self.coord[3] += self.speed
+
+    def set_direction(self, direction):
+        self.prev_direction = direction
     
     def box_update(self):
         self.canvas.coords(
@@ -44,15 +67,35 @@ class Box:
             self.coord[2],
             self.coord[3]
         )
+        if self.vision_circle is not None:
+            self.canvas.coords(
+                self.vision_circle,
+                self.center[0] - self.vision_range,
+                self.center[1] - self.vision_range,
+                self.center[0] + self.vision_range,
+                self.center[1] + self.vision_range
+            )
+        self.corners = [
+            (self.coord[0], self.coord[1]),  # top-left
+            (self.coord[2], self.coord[1]),  # top-right
+            (self.coord[0], self.coord[3]),  # bottom-left
+            (self.coord[2], self.coord[3])   # bottom-right
+        ]
+        self.center = ((self.coord[0] + self.coord[2]) / 2, (self.coord[1] + self.coord[3]) / 2)
 
     def change_color(self, color):
         self.canvas.itemconfig(self.box, fill=color)
+
+    def toggle_manual_control(self):
+        self.manual_control = not self.manual_control
+        if self.manual_control:
+            self.change_color("yellow")
+        else:
+            self.change_color(self.default_color)
     
     @staticmethod
     def choose_direction(box, inertia_probability = 0.95):
-        if box.prev_direction is None:
-            return random.choice(box.possible_directions)
-        elif random.random() > inertia_probability:
+        if random.random() > inertia_probability:
             return random.choice(box.possible_directions)
         else:
             return box.prev_direction
@@ -133,17 +176,18 @@ class Box:
     def check_box1_corners_inside_box2(box1, box2):
         ''' Check if the two boxes are currently overlapping '''
         return (
-            Box.check_point_inside_box(box2, box1.coord[0], box1.coord[1]) or
-            Box.check_point_inside_box(box2, box1.coord[2], box1.coord[1]) or
-            Box.check_point_inside_box(box2, box1.coord[0], box1.coord[3]) or
-            Box.check_point_inside_box(box2, box1.coord[2], box1.coord[3])
+            Box.check_point_inside_box(box2, box1.corners[0]) or
+            Box.check_point_inside_box(box2, box1.corners[1]) or
+            Box.check_point_inside_box(box2, box1.corners[2]) or
+            Box.check_point_inside_box(box2, box1.corners[3])
         )
     
     @staticmethod
-    def check_point_inside_box(box, point_x, point_y):
+    def check_point_inside_box(box, point: tuple):
         ''' Check if a point (x,y) is inside the box '''
+        x, y = point
         return (
-            (box.coord[0] <= point_x <= box.coord[2]) and (box.coord[1] <= point_y <= box.coord[3])
+            (box.coord[0] <= x <= box.coord[2]) and (box.coord[1] <= y <= box.coord[3])
         )
 
     def eat_food(self):

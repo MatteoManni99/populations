@@ -17,7 +17,6 @@ class MyScreen:
         self.width = self.config["width"]
         self.height = self.config["height"]
         self.canvas.pack()
-        self.box_index = 0
         self.box_list = []
         self.food_list = []
         for i in range(self.config["num_boxes"]):
@@ -32,36 +31,48 @@ class MyScreen:
         self.spawn_food_event = self.config["spawn_food_event"]
         self.last_update_time_spawn_food = time.time()
         self.last_update_time_move = time.time()
+        self.manual_control_one_box = False
+        self.box_manual_control_index: int = 0  # Index of the box under manual control
+        self.paused = False
         self.update()
         print("Good settings: ", self.good_time_settings())
     
     def key_press(self, event):
         key = event.keysym.lower()
 
-        if key == "1": self.box_index = 0  # Select first box
-        elif key == "2": self.box_index = 1  # Select second box
-        elif key == "3": self.box_index = 2  # Select third box
+        if key == "space": self.paused = not self.paused  # Toggle pause
+        if key == "m":
+            self.manual_control_one_box = not self.manual_control_one_box # Toggle manual control
+            self.box_list[self.box_manual_control_index].toggle_manual_control()
         elif key == "escape": self.root.quit()  # Exit on Escape key
-
-        if key == "d":
-            if self.check_collisions_post_move("right", self.box_index) is False:
-                self.box_list[self.box_index].move("right")
-        elif key == "a":
-            if self.check_collisions_post_move("left", self.box_index) is False:
-                self.box_list[self.box_index].move("left")
-        elif key == "s":
-            if self.check_collisions_post_move("down", self.box_index) is False:
-                self.box_list[self.box_index].move("down")
-        elif key == "w":
-            if self.check_collisions_post_move("up", self.box_index) is False:
-                self.box_list[self.box_index].move("up")
-
+        
+        if self.manual_control_one_box and not self.paused:
+            if key == "d":
+                if self.check_collisions_post_move("right", self.box_manual_control_index) is False:
+                    self.box_list[self.box_manual_control_index].move("right")
+            elif key == "a":
+                if self.check_collisions_post_move("left", self.box_manual_control_index) is False:
+                    self.box_list[self.box_manual_control_index].move("left")
+            elif key == "s":
+                if self.check_collisions_post_move("down", self.box_manual_control_index) is False:
+                    self.box_list[self.box_manual_control_index].move("down")
+            elif key == "w":
+                if self.check_collisions_post_move("up", self.box_manual_control_index) is False:
+                    self.box_list[self.box_manual_control_index].move("up")
+                    
+            self.try_eat_food(box_index = self.box_manual_control_index)
+            self.box_list[self.box_manual_control_index].box_update()
+            
     def key_release(self, event):
         key = event.keysym.lower()
         # if key in ["a", "d"]: self.box_list[self.box_index].dx = 0
         # if key in ["w", "s"]: self.box_list[self.box_index].dy = 0
 
     def update(self):
+        if self.paused:
+            self.root.after(ms = self.config["ms_between_frames"], func = self.update)
+            return
+        
         if self.spawn_food_event:
             #Spawn food randomly
             elapsed = time.time() - self.last_update_time_spawn_food
@@ -77,16 +88,22 @@ class MyScreen:
             if elapsed >= self.config["box"]["move_rate_ms"]/1000:
                 self.last_update_time_move = time.time()
                 for i, box in enumerate(self.box_list):
+
+                    if self.manual_control_one_box and i == self.box_manual_control_index:
+                        continue
+                    
+                    #Move box
                     direction = Box.choose_direction(box, inertia_probability=0.95)
                     if self.check_collisions_post_move(direction, i) is False:
                         box.move(direction)
                     else:
                         # Collision detected, choose a new direction
                         new_direction = Box.choose_direction(box, inertia_probability=0.0)
-                        if self.check_collisions_post_move(new_direction, i) is False:
-                            box.move(new_direction)
-                    self.try_eat_food(box_index = i)
+                        box.set_direction(new_direction)
                     box.box_update()
+                    
+                    #Try to eat food
+                    self.try_eat_food(box_index = i)        
         
         self.root.after(ms = self.config["ms_between_frames"], func = self.update) #(ms = , funztion = self.update)
 

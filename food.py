@@ -7,6 +7,7 @@ class Food(Box):
         self.height = config_item["height"]
         self.coord = [x, y, x + self.width, y + self.height]
         self.canvas = canvas
+        self.center = ((self.coord[0] + self.coord[2]) / 2, (self.coord[1] + self.coord[3]) / 2)
         self.box = canvas.create_rectangle(
             self.coord[0],
             self.coord[1],
@@ -14,16 +15,12 @@ class Food(Box):
             self.coord[3],
             fill=config_item["color"]
         )
-        self.prev_direction = None
-
-    def update(self):
-        self.canvas.coords(
-            self.box,
-            self.coord[0],
-            self.coord[1],
-            self.coord[2],
-            self.coord[3]
-        )
+        self.corners = [
+            (self.coord[0], self.coord[1]),  # top-left
+            (self.coord[2], self.coord[1]),  # top-right
+            (self.coord[0], self.coord[3]),  # bottom-left
+            (self.coord[2], self.coord[3])   # bottom-right
+        ]
     
     @staticmethod
     def random_position(config):
