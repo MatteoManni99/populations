@@ -7,13 +7,13 @@ class Box:
         self.growth_width_limit = config_box["growth_width_limit"]
         self.growth_height_limit = config_box["growth_height_limit"]
         
-        self.corners = [x, y, x + self.width, y + self.height]
+        self.coord = [x, y, x + self.width, y + self.height]
         self.canvas = canvas
         self.box = canvas.create_rectangle(
-            self.corners[0],
-            self.corners[1],
-            self.corners[2],
-            self.corners[3],
+            self.coord[0],
+            self.coord[1],
+            self.coord[2],
+            self.coord[3],
             fill=config_box["color"]
         )
         self.speed = config_box["speed"]
@@ -24,25 +24,25 @@ class Box:
     def move(self, direction):
         self.prev_direction = direction
         if direction == "right":
-            self.corners[0] += self.speed
-            self.corners[2] += self.speed
+            self.coord[0] += self.speed
+            self.coord[2] += self.speed
         elif direction == "left":
-            self.corners[0] -= self.speed
-            self.corners[2] -= self.speed
+            self.coord[0] -= self.speed
+            self.coord[2] -= self.speed
         elif direction == "up":
-            self.corners[1] -= self.speed
-            self.corners[3] -= self.speed
+            self.coord[1] -= self.speed
+            self.coord[3] -= self.speed
         elif direction == "down":
-            self.corners[1] += self.speed
-            self.corners[3] += self.speed
+            self.coord[1] += self.speed
+            self.coord[3] += self.speed
     
     def box_update(self):
         self.canvas.coords(
             self.box,
-            self.corners[0],
-            self.corners[1],
-            self.corners[2],
-            self.corners[3]
+            self.coord[0],
+            self.coord[1],
+            self.coord[2],
+            self.coord[3]
         )
 
     def change_color(self, color):
@@ -60,61 +60,106 @@ class Box:
     @staticmethod
     def check_box_collision(box1, box2, direction):
         if direction == "up":
-            return ((box2.corners[0] < box1.corners[0] and box1.corners[0] < box2.corners[2]) or \
-                    (box2.corners[0] < box1.corners[2] and box1.corners[2] < box2.corners[2]) or\
-                    (box2.corners[0] == box1.corners[0] and box1.corners[2] == box2.corners[2]) or\
-                    (box1.corners[0] <= box2.corners[0] and box1.corners[2] >= box2.corners[2])) and \
-                    box1.corners[1] - box1.speed < box2.corners[3] and \
-                    box1.corners[3] > box2.corners[1]
+            return ((box2.coord[0] < box1.coord[0] and box1.coord[0] < box2.coord[2]) or \
+                    (box2.coord[0] < box1.coord[2] and box1.coord[2] < box2.coord[2]) or\
+                    (box2.coord[0] == box1.coord[0] and box1.coord[2] == box2.coord[2]) or\
+                    (box1.coord[0] <= box2.coord[0] and box1.coord[2] >= box2.coord[2])) and \
+                    box1.coord[1] - box1.speed < box2.coord[3] and \
+                    box1.coord[3] > box2.coord[1]
                     
         elif direction == "down":
-            return ((box2.corners[0] < box1.corners[0] and box1.corners[0] < box2.corners[2]) or \
-                    (box2.corners[0] < box1.corners[2] and box1.corners[2] < box2.corners[2]) or \
-                    (box2.corners[0] == box1.corners[0] and box1.corners[2] == box2.corners[2])or \
-                    (box1.corners[0] <= box2.corners[0] and box1.corners[2] >= box2.corners[2])) and \
-                    box1.corners[3] + box1.speed > box2.corners[1] and \
-                    box1.corners[1] < box2.corners[3]
+            return ((box2.coord[0] < box1.coord[0] and box1.coord[0] < box2.coord[2]) or \
+                    (box2.coord[0] < box1.coord[2] and box1.coord[2] < box2.coord[2]) or \
+                    (box2.coord[0] == box1.coord[0] and box1.coord[2] == box2.coord[2])or \
+                    (box1.coord[0] <= box2.coord[0] and box1.coord[2] >= box2.coord[2])) and \
+                    box1.coord[3] + box1.speed > box2.coord[1] and \
+                    box1.coord[1] < box2.coord[3]
         
         elif direction == "left":
-            return ((box2.corners[1] < box1.corners[1] and box1.corners[1] < box2.corners[3]) or \
-                    (box2.corners[1] < box1.corners[3] and box1.corners[3] < box2.corners[3]) or \
-                    (box2.corners[1] == box1.corners[1] and box1.corners[3] == box2.corners[3]) or \
-                    (box1.corners[1] <= box2.corners[1] and box1.corners[3] >= box2.corners[3])) and \
-                    box1.corners[0] - box1.speed < box2.corners[2] and \
-                    box1.corners[2] > box2.corners[0]
+            return ((box2.coord[1] < box1.coord[1] and box1.coord[1] < box2.coord[3]) or \
+                    (box2.coord[1] < box1.coord[3] and box1.coord[3] < box2.coord[3]) or \
+                    (box2.coord[1] == box1.coord[1] and box1.coord[3] == box2.coord[3]) or \
+                    (box1.coord[1] <= box2.coord[1] and box1.coord[3] >= box2.coord[3])) and \
+                    box1.coord[0] - box1.speed < box2.coord[2] and \
+                    box1.coord[2] > box2.coord[0]
         
         elif direction == "right":
-            return ((box2.corners[1] < box1.corners[1] and box1.corners[1] < box2.corners[3]) or \
-                    (box2.corners[1] < box1.corners[3] and box1.corners[3] < box2.corners[3]) or \
-                    (box2.corners[1] == box1.corners[1] and box1.corners[3] == box2.corners[3]) or \
-                    (box1.corners[1] <= box2.corners[1] and box1.corners[3] >= box2.corners[3])) and \
-                    box1.corners[2] + box1.speed > box2.corners[0] and \
-                    box1.corners[0] < box2.corners[2]
+            return ((box2.coord[1] < box1.coord[1] and box1.coord[1] < box2.coord[3]) or \
+                    (box2.coord[1] < box1.coord[3] and box1.coord[3] < box2.coord[3]) or \
+                    (box2.coord[1] == box1.coord[1] and box1.coord[3] == box2.coord[3]) or \
+                    (box1.coord[1] <= box2.coord[1] and box1.coord[3] >= box2.coord[3])) and \
+                    box1.coord[2] + box1.speed > box2.coord[0] and \
+                    box1.coord[0] < box2.coord[2]
         
         else: return False
     
     @staticmethod
-    def check_border_collision(box, direction, width, height):
+    def check_screen_border_collision(box, direction, width, height):
         if direction == "up":
-            return box.corners[1] - box.speed < 0
+            return box.coord[1] - box.speed < 0
         elif direction == "down":
-            return box.corners[3] + box.speed > height
+            return box.coord[3] + box.speed > height
         elif direction == "left":
-            return box.corners[0] - box.speed < 0
+            return box.coord[0] - box.speed < 0
         elif direction == "right":
-            return box.corners[2] + box.speed > width
+            return box.coord[2] + box.speed > width
+
+    @staticmethod
+    def check_boxes_overlap(box1, box2):
+        ''' Check if the two boxes are currently overlapping '''
+        return (
+            Box.check_box1_corners_inside_box2(box1, box2) or
+            Box.check_box1_corners_inside_box2(box2, box1)
+        )
     
+    @staticmethod
+    def check_box1_border_inside_box2(box1, box2):
+        ''' Check if box1's borders are inside box2 '''
+        return (
+            (Box.check_point_inside_box(box2, box1.coord[0], box1.coord[1]) and
+            Box.check_point_inside_box(box2, box1.coord[2], box1.coord[1])
+            ) or \
+            (Box.check_point_inside_box(box2, box1.coord[0], box1.coord[1]) and
+            Box.check_point_inside_box(box2, box1.coord[2], box1.coord[1])
+            ) or \
+            (Box.check_point_inside_box(box2, box1.coord[0], box1.coord[3]) and
+            Box.check_point_inside_box(box2, box1.coord[2], box1.coord[3])
+            ) or \
+            (Box.check_point_inside_box(box2, box1.coord[0], box1.coord[3]) and
+            Box.check_point_inside_box(box2, box1.coord[2], box1.coord[3]))
+        )
+
+    @staticmethod
+    def check_box1_corners_inside_box2(box1, box2):
+        ''' Check if the two boxes are currently overlapping '''
+        return (
+            Box.check_point_inside_box(box2, box1.coord[0], box1.coord[1]) or
+            Box.check_point_inside_box(box2, box1.coord[2], box1.coord[1]) or
+            Box.check_point_inside_box(box2, box1.coord[0], box1.coord[3]) or
+            Box.check_point_inside_box(box2, box1.coord[2], box1.coord[3])
+        )
+    
+    @staticmethod
+    def check_point_inside_box(box, point_x, point_y):
+        ''' Check if a point (x,y) is inside the box '''
+        return (
+            (box.coord[0] <= point_x <= box.coord[2]) and (box.coord[1] <= point_y <= box.coord[3])
+        )
+
     def eat_food(self):
         self.change_dimensions(self.width + 2, self.height + 2)
         self.score += 1
+
+    def un_growth(self):
+        self.change_dimensions(self.width - 2, self.height - 2)
     
     def change_dimensions(self, new_width, new_height):
         # TODO: Center the box when changing dimensions
         if new_width <= self.growth_width_limit:
             self.width = new_width
-            self.corners[2] = self.corners[0] + self.width
+            self.coord[2] = self.coord[0] + self.width
         if new_height <= self.growth_height_limit:
             self.height = new_height
-            self.corners[3] = self.corners[1] + self.height
+            self.coord[3] = self.coord[1] + self.height
         self.box_update()
         

@@ -29,10 +29,11 @@ class MyScreen:
         self.possible_directions = config["possible_directions"]
         self.config_colors = self.config["colors"]
         self.random_walk = self.config["box_random_walk"]
+        self.spawn_food_event = self.config["spawn_food_event"]
         self.last_update_time_spawn_food = time.time()
         self.last_update_time_move = time.time()
         self.update()
-        print("settaggi buoni: ", self.good_time_settings())
+        print("Good settings: ", self.good_time_settings())
     
     def key_press(self, event):
         key = event.keysym.lower()
@@ -43,16 +44,16 @@ class MyScreen:
         elif key == "escape": self.root.quit()  # Exit on Escape key
 
         if key == "d":
-            if self.check_collisions("right", self.box_index) is False:
+            if self.check_collisions_post_move("right", self.box_index) is False:
                 self.box_list[self.box_index].move("right")
         elif key == "a":
-            if self.check_collisions("left", self.box_index) is False:
+            if self.check_collisions_post_move("left", self.box_index) is False:
                 self.box_list[self.box_index].move("left")
         elif key == "s":
-            if self.check_collisions("down", self.box_index) is False:
+            if self.check_collisions_post_move("down", self.box_index) is False:
                 self.box_list[self.box_index].move("down")
         elif key == "w":
-            if self.check_collisions("up", self.box_index) is False:
+            if self.check_collisions_post_move("up", self.box_index) is False:
                 self.box_list[self.box_index].move("up")
 
     def key_release(self, event):
@@ -61,71 +62,68 @@ class MyScreen:
         # if key in ["w", "s"]: self.box_list[self.box_index].dy = 0
 
     def update(self):
-        
-        ## Auto-move boxes, 1 move every frame (update) ##
+        if self.spawn_food_event:
+            #Spawn food randomly
+            elapsed = time.time() - self.last_update_time_spawn_food
+            if elapsed >= self.config["food"]["spawn_rate_ms"]/1000:
+                self.last_update_time_spawn_food = time.time()
+                if len(self.food_list) < self.config["food"]["max_food_items"]:
+                    food = Food.spawn_food_event(self.canvas, self.config)
+                    self.food_list.append(food)
+
         if self.random_walk:
+            #Move boxes randomly
             elapsed = time.time() - self.last_update_time_move
-            if elapsed >= self.config["box"]["move_rate_sec"]:
+            if elapsed >= self.config["box"]["move_rate_ms"]/1000:
                 self.last_update_time_move = time.time()
                 for i, box in enumerate(self.box_list):
                     direction = Box.choose_direction(box, inertia_probability=0.95)
-                    if self.check_collisions(direction, i) is False:
+                    if self.check_collisions_post_move(direction, i) is False:
                         box.move(direction)
                     else:
                         # Collision detected, choose a new direction
                         new_direction = Box.choose_direction(box, inertia_probability=0.0)
-                        if self.check_collisions(new_direction, i) is False:
+                        if self.check_collisions_post_move(new_direction, i) is False:
                             box.move(new_direction)
+                    self.try_eat_food(box_index = i)
                     box.box_update()
-            
-        #Spawn food randomly
-        elapsed = time.time() - self.last_update_time_spawn_food
-        if elapsed >= self.config["food"]["spawn_rate_sec"]:
-            self.last_update_time_spawn_food = time.time()
-            food = Food.spawn_food_event(self.canvas, self.config)
-            self.food_list.append(food)
-
+        
         self.root.after(ms = self.config["ms_between_frames"], func = self.update) #(ms = , funztion = self.update)
 
     def run(self):
         self.root.mainloop()
 
-    def check_collisions(self, direction, box_index):
+    def check_collisions_post_move(self, direction, box_index):
         collision = False
-        collision |= Box.check_border_collision(self.box_list[box_index], direction, self.width, self.height)
+        collision |= Box.check_screen_border_collision(self.box_list[box_index], direction, self.width, self.height)
         for i, box in enumerate(self.box_list):
             if i != box_index:
                 collision |= Box.check_box_collision(self.box_list[box_index], box, direction)  
                 if collision: break
-        
-        #TODO: rimuovere il rischio che post mangiata il box si trovi dentro un altro box
-        if collision is False:
-            # Check food collisions
-            #TODO: the box should eat multiple food items in one move
-            for i, food in enumerate(self.food_list):
-                if Box.check_box_collision(self.box_list[box_index], food, direction):
-                    self.box_list[box_index].eat_food()
-                    self.canvas.delete(food.box)
-                    del self.food_list[i]
-                    break
-
         return collision
     
+    def try_eat_food(self, box_index):
+        collision_post_eating = False
+        for i, food in enumerate(self.food_list):
+            if Box.check_boxes_overlap(self.box_list[box_index], food):
+                self.box_list[box_index].eat_food()
+                self.canvas.delete(food.box)
+                del self.food_list[i]
+                for i, box in enumerate(self.box_list):
+                    if i != box_index:
+                        collision_post_eating |= Box.check_boxes_overlap(self.box_list[box_index], box)
+                        if collision_post_eating:
+                            self.box_list[box_index].un_growth()
+                            break
+                self.box_list[box_index].box_update()
+        
     def good_time_settings(self):
-        if(
-            self.config["food"]["spawn_rate_sec"]*1000 % self.config["ms_between_frames"] == 0 and \
-            self.config["food"]["spawn_rate_sec"]*1000 >= self.config["ms_between_frames"] and \
-            self.config["box"]["move_rate_sec"]*1000 % self.config["ms_between_frames"] == 0 and \
-            self.config["box"]["move_rate_sec"]*1000 >= self.config["ms_between_frames"] \
-            
-        ):
-            print(self.config["food"]["spawn_rate_sec"]*1000 % self.config["ms_between_frames"])
-            print(self.config["box"]["move_rate_sec"]*1000, self.config["ms_between_frames"])
-            return True
-        else:
-            print(self.config["food"]["spawn_rate_sec"]*1000 % self.config["ms_between_frames"])
-            print(self.config["box"]["move_rate_sec"]*1000, self.config["ms_between_frames"])
-            return False
+        return (
+            self.config["food"]["spawn_rate_ms"] % self.config["ms_between_frames"] == 0 and \
+            self.config["food"]["spawn_rate_ms"] >= self.config["ms_between_frames"] and \
+            self.config["box"]["move_rate_ms"] % self.config["ms_between_frames"] == 0 and \
+            self.config["box"]["move_rate_ms"] >= self.config["ms_between_frames"] \
+        )
     
     
 

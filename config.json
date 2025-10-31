@@ -1,8 +1,8 @@
 {
-    "ms_between_frames": 50,
+    "ms_between_frames": 20,
     "width": 1000,
     "height": 500,
-    "num_boxes": 20,
+    "num_boxes": 3,
     "box": {
         "width": 20,
         "height": 20,
@@ -10,9 +10,9 @@
         "borderColor": "black",
         "borderWidth": 2,
         "speed": 10,
-        "growth_width_limit": 200,
-        "growth_height_limit": 200,
-        "move_rate_sec": 0.10
+        "growth_width_limit": 2000,
+        "growth_height_limit": 2000,
+        "move_rate_ms": 20
     },
     "food": {
         "width": 10,
@@ -20,8 +20,10 @@
         "color": "green",
         "borderColor": "black",
         "borderWidth": 1,
-        "spawn_rate_sec": 0.40
+        "spawn_rate_ms": 1000,
+        "max_food_items": 5
     },
+    "spawn_food_event": true,
     "box_random_walk": true,
     "possible_directions": ["up", "down", "left", "right"],
     "colors": ["red", "green", "blue", "yellow", "purple", "orange", "pink", "cyan", "magenta", "brown", "black", "white", "gray", "lightblue", "lightgreen"]
