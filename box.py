@@ -40,6 +40,9 @@ class Box:
         self.possible_directions = config["possible_directions"]
         self.prev_direction = random.choice(self.possible_directions)
         self.score = 0
+        self.box_in_vision = []  # List of boxes currently in vision
+        self.food_in_vision = []  # List of food currently in vision
+
 
     def move(self, direction):
         self.prev_direction = direction
@@ -82,6 +85,23 @@ class Box:
             (self.coord[2], self.coord[3])   # bottom-right
         ]
         self.center = ((self.coord[0] + self.coord[2]) / 2, (self.coord[1] + self.coord[3]) / 2)
+    
+    def update_elements_in_vision(self, food_list, box_list):
+        # Update food in vision
+        self.food_in_vision = []
+        for food in food_list:
+            distance = ((self.center[0] - food.center[0]) ** 2 + (self.center[1] - food.center[1]) ** 2) ** 0.5
+            if distance <= self.vision_range:
+                self.food_in_vision.append({"distance": distance, "food": food})
+        
+        # Update boxes in vision
+        self.box_in_vision = []
+        for box in box_list:
+            if box is self:
+                continue
+            distance = ((self.center[0] - box.center[0]) ** 2 + (self.center[1] - box.center[1]) ** 2) ** 0.5
+            if distance <= self.vision_range:
+                self.box_in_vision.append({"distance": distance, "box": box})
 
     def change_color(self, color):
         self.canvas.itemconfig(self.box, fill=color)

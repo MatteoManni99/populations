@@ -8,7 +8,7 @@ class MyScreen:
     def __init__(self, config):
         self.config = config
         self.root = tk.Tk()
-        self.root.title("Tkinter Moving Box")
+        self.root.title("Populations")
         self.canvas = tk.Canvas(
             self.root,
             width=self.config["width"],
@@ -33,6 +33,7 @@ class MyScreen:
         self.last_update_time_move = time.time()
         self.manual_control_one_box = False
         self.box_manual_control_index: int = 0  # Index of the box under manual control
+        self.box_monitored_index: int = 0  # Index of the box being monitored
         self.paused = False
         self.update()
         print("Good settings: ", self.good_time_settings())
@@ -72,7 +73,12 @@ class MyScreen:
         if self.paused:
             self.root.after(ms = self.config["ms_between_frames"], func = self.update)
             return
-        
+
+        #print("Food in vision count:", len(self.box_list[self.box_monitored_index].food_in_vision))
+        #print(self.box_list[self.box_monitored_index].food_in_vision)
+        #print("Box in vision count:", len(self.box_list[self.box_monitored_index].box_in_vision))
+        #print(self.box_list[self.box_monitored_index].box_in_vision)
+
         if self.spawn_food_event:
             #Spawn food randomly
             elapsed = time.time() - self.last_update_time_spawn_food
@@ -87,12 +93,12 @@ class MyScreen:
             elapsed = time.time() - self.last_update_time_move
             if elapsed >= self.config["box"]["move_rate_ms"]/1000:
                 self.last_update_time_move = time.time()
+                
+                #Move boxes
                 for i, box in enumerate(self.box_list):
-
                     if self.manual_control_one_box and i == self.box_manual_control_index:
                         continue
-                    
-                    #Move box
+
                     direction = Box.choose_direction(box, inertia_probability=0.95)
                     if self.check_collisions_post_move(direction, i) is False:
                         box.move(direction)
@@ -101,10 +107,15 @@ class MyScreen:
                         new_direction = Box.choose_direction(box, inertia_probability=0.0)
                         box.set_direction(new_direction)
                     box.box_update()
-                    
-                    #Try to eat food
-                    self.try_eat_food(box_index = i)        
-        
+                
+                #Try to eat food
+                for i, box in enumerate(self.box_list):
+                    self.try_eat_food(box_index = i)
+                
+                #Update elements in vision
+                for box in self.box_list:
+                    box.update_elements_in_vision(self.food_list, self.box_list)
+
         self.root.after(ms = self.config["ms_between_frames"], func = self.update) #(ms = , funztion = self.update)
 
     def run(self):
