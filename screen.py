@@ -67,26 +67,23 @@ class MyScreen:
         self.manual_control_one_box = False
         self.box_manual_control_index = 0  # Index of the box under manual control
         self.box_monitored_index = None  # Index of the box being monitored
-        self.box_monitored_score = None
-        self.box_monitored_view_box = None
-        self.box_monitored_view_food = None
         self.paused = False
 
         # Dashboard info labels
-        self.box_monitored_index_var = tk.StringVar(value="N/A")
-        self.box_monitored_score_var = tk.StringVar(value="N/A")
-        self.box_monitored_view_box_var = tk.StringVar(value="N/A")
-        self.box_monitored_view_food_var = tk.StringVar(value="N/A")
-        info_frame = tk.Frame(dashboard_frame, bg="lightgrey")
+        self.box_monitored_index_var = tk.StringVar(value="None")
+        self.box_monitored_score_var = tk.StringVar(value="None")
+        self.box_monitored_view_box_var = tk.StringVar(value="None")
+        self.box_monitored_view_food_var = tk.StringVar(value="None")
+        info_frame = tk.Frame(dashboard_frame, bg="white", highlightbackground="black", highlightthickness=1)
         info_frame.place(x=10, y=10)  # posizione dentro il dashboard_canvas
-        tk.Label(info_frame, text="Box Index:", bg="lightgrey", anchor="w").grid(row=0, column=0, sticky="w")
-        tk.Label(info_frame, textvariable=self.box_monitored_index_var, bg="lightgrey", anchor="w").grid(row=0, column=1, sticky="w")
-        tk.Label(info_frame, text="Score:", bg="lightgrey", anchor="w").grid(row=1, column=0, sticky="w")
-        tk.Label(info_frame, textvariable=self.box_monitored_score_var, bg="lightgrey", anchor="w").grid(row=1, column=1, sticky="w")
-        tk.Label(info_frame, text="View Box:", bg="lightgrey", anchor="w").grid(row=2, column=0, sticky="w")
-        tk.Label(info_frame, textvariable=self.box_monitored_view_box_var, bg="lightgrey", anchor="w").grid(row=2, column=1, sticky="w")
-        tk.Label(info_frame, text="View Food:", bg="lightgrey", anchor="w").grid(row=3, column=0, sticky="w")
-        tk.Label(info_frame, textvariable=self.box_monitored_view_food_var, bg="lightgrey", anchor="w").grid(row=3, column=1, sticky="w")
+        tk.Label(info_frame, text="Box Index:", bg="white", anchor="w").grid(row=0, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.box_monitored_index_var, bg="white", anchor="w").grid(row=0, column=1, sticky="w")
+        tk.Label(info_frame, text="Score:", bg="white", anchor="w").grid(row=1, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.box_monitored_score_var, bg="white", anchor="w").grid(row=1, column=1, sticky="w")
+        tk.Label(info_frame, text="View Box:", bg="white", anchor="w").grid(row=2, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.box_monitored_view_box_var, bg="white", anchor="w").grid(row=2, column=1, sticky="w")
+        tk.Label(info_frame, text="View Food:", bg="white", anchor="w").grid(row=3, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.box_monitored_view_food_var, bg="white", anchor="w").grid(row=3, column=1, sticky="w")
         
         self.update()
         
@@ -98,25 +95,17 @@ class MyScreen:
                 if self.box_monitored_index is not None:
                     # Unhighlight previously monitored box
                     self.box_list[self.box_monitored_index].set_highlight(False)
-                    self.box_monitored_index = None
-                    self.box_monitored_score = None
-                    self.box_monitored_view_box = None
-                    self.box_monitored_view_food = None
+                    self.dashboard_box_highlight_clean()
                 # Highlight new monitored box
                 box.set_highlight(True)
                 self.box_monitored_index = self.box_list.index(box)
-                self.box_monitored_score = self.box_list[self.box_monitored_index].score
-                self.box_monitored_view_box = self.box_list[self.box_monitored_index].box_in_vision
-                self.box_monitored_view_food = self.box_list[self.box_monitored_index].food_in_vision
                 return
 
         # if click was outside any box reset monitored box if any
         if self.box_monitored_index is not None:
             self.box_list[self.box_monitored_index].set_highlight(False)
+            self.dashboard_box_highlight_clean()
             self.box_monitored_index = None
-            self.box_monitored_score = None
-            self.box_monitored_view_box = None
-            self.box_monitored_view_food = None
 
     def key_press(self, event):
         key = event.keysym.lower()
@@ -155,10 +144,6 @@ class MyScreen:
             return
 
         if self.box_monitored_index is not None:
-            #print("Food in vision count:", len(self.box_list[self.box_monitored_index].food_in_vision))
-            #print(self.box_list[self.box_monitored_index].food_in_vision)
-            #print("Box in vision count:", len(self.box_list[self.box_monitored_index].box_in_vision))
-            #print(self.box_list[self.box_monitored_index].box_in_vision)
             #Update dashboard info
             self.box_monitored_index_var.set(str(self.box_monitored_index))
             self.box_monitored_score_var.set(str(self.box_list[self.box_monitored_index].score))
@@ -203,6 +188,12 @@ class MyScreen:
                     box.update_elements_in_vision(self.food_list, self.box_list)
 
         self.root.after(ms = self.config["ms_between_frames"], func = self.update) #(ms = , funztion = self.update)
+
+    def dashboard_box_highlight_clean(self):
+        self.box_monitored_index_var.set("None")
+        self.box_monitored_score_var.set("None")
+        self.box_monitored_view_box_var.set("None")
+        self.box_monitored_view_food_var.set("None")
 
     def run(self):
         self.root.mainloop()
