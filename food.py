@@ -24,8 +24,8 @@ class Food(Box):
     
     @staticmethod
     def random_position(config):
-        x = random.randint(0, config["width"] - config["food"]["width"])
-        y = random.randint(0, config["height"] - config["food"]["height"])
+        x = random.randint(0, config["world_width"] - config["food"]["width"])
+        y = random.randint(0, config["world_height"] - config["food"]["height"])
         return x, y
     
     @staticmethod

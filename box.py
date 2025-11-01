@@ -2,13 +2,14 @@ import random
 
 class Box:
     def __init__(self, canvas, x, y, config, config_box):
+        self.config = config
+        self.config_box = config_box
         self.width = config_box["width"]
         self.height = config_box["height"]
         self.growth_width_limit = config_box["growth_width_limit"]
         self.growth_height_limit = config_box["growth_height_limit"]
         self.vision_range = config_box["vision_range"]
         self.canvas = canvas
-        self.default_color = config_box["color"]
         self.coord = [x, y, x + self.width, y + self.height]
         self.center = ((self.coord[0] + self.coord[2]) / 2, (self.coord[1] + self.coord[3]) / 2)
         self.box = canvas.create_rectangle(
@@ -16,7 +17,7 @@ class Box:
             self.coord[1],
             self.coord[2],
             self.coord[3],
-            fill=self.default_color
+            fill=self.config_box["color"]
         )
         if (config["plot_vision_range"]):
             self.vision_circle = canvas.create_oval(
@@ -36,6 +37,7 @@ class Box:
         ]
 
         self.manual_control = False
+        self.highlighted = False
         self.speed = config_box["speed"]
         self.possible_directions = config["possible_directions"]
         self.prev_direction = random.choice(self.possible_directions)
@@ -105,14 +107,23 @@ class Box:
 
     def change_color(self, color):
         self.canvas.itemconfig(self.box, fill=color)
+    
+    def reset_color(self):
+        if self.manual_control:
+            self.change_color(self.config["box"]["manual_color"])
+        elif self.highlighted:
+            self.change_color(self.config["box"]["highlight_color"])
+        else:
+            self.change_color(self.config["box"]["color"])
 
     def toggle_manual_control(self):
         self.manual_control = not self.manual_control
-        if self.manual_control:
-            self.change_color("yellow")
-        else:
-            self.change_color(self.default_color)
-    
+        self.reset_color()
+
+    def set_highlight(self, highlighted):
+        self.highlighted = highlighted
+        self.reset_color()
+
     @staticmethod
     def choose_direction(box, inertia_probability = 0.95):
         if random.random() > inertia_probability:
@@ -157,15 +168,15 @@ class Box:
         else: return False
     
     @staticmethod
-    def check_screen_border_collision(box, direction, width, height):
+    def check_screen_border_collision(box, direction, world_width, world_height):
         if direction == "up":
             return box.coord[1] - box.speed < 0
         elif direction == "down":
-            return box.coord[3] + box.speed > height
+            return box.coord[3] + box.speed > world_height
         elif direction == "left":
             return box.coord[0] - box.speed < 0
         elif direction == "right":
-            return box.coord[2] + box.speed > width
+            return box.coord[2] + box.speed > world_width
 
     @staticmethod
     def check_boxes_overlap(box1, box2):
@@ -216,7 +227,7 @@ class Box:
 
     def un_growth(self):
         self.change_dimensions(self.width - 2, self.height - 2)
-    
+
     def change_dimensions(self, new_width, new_height):
         # TODO: Center the box when changing dimensions
         if new_width <= self.growth_width_limit:

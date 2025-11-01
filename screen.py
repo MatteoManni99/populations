@@ -1,4 +1,3 @@
-import random
 import time
 import tkinter as tk
 from box import Box
@@ -9,19 +8,28 @@ class MyScreen:
         self.config = config
         self.root = tk.Tk()
         self.root.title("Populations")
+        # # Create frames (left and right)
+        # left_frame = tk.Frame(self.root, world_width=200, padding=10)
+        # left_frame.pack(side="left", fill="both", expand=True)
+
+        # right_frame = tk.Frame(self.root, world_width=400, padding=10)
+        # right_frame.pack(side="right", fill="both", expand=True)
+
         self.canvas = tk.Canvas(
             self.root,
-            width=self.config["width"],
-            height=self.config["height"],
+            width=self.config["world_width"],
+            height=self.config["world_height"],
             bg="white")
-        self.width = self.config["width"]
-        self.height = self.config["height"]
+        self.world_width = self.config["world_width"]
+        self.world_height = self.config["world_height"]
         self.canvas.pack()
+        
         self.box_list = []
-        self.food_list = []
         for i in range(self.config["num_boxes"]):
             self.box_list.append(Box(self.canvas, i*40, i*10, self.config, self.config["box"]))
+        self.food_list = []
 
+        self.canvas.bind("<Button-1>", self.on_left_click)
         self.root.bind("<KeyPress>", self.key_press)
         self.root.bind("<KeyRelease>", self.key_release)
 
@@ -32,18 +40,36 @@ class MyScreen:
         self.last_update_time_spawn_food = time.time()
         self.last_update_time_move = time.time()
         self.manual_control_one_box = False
-        self.box_manual_control_index: int = 0  # Index of the box under manual control
-        self.box_monitored_index: int = 0  # Index of the box being monitored
+        self.box_manual_control_index = 0  # Index of the box under manual control
+        self.box_monitored_index = None  # Index of the box being monitored
         self.paused = False
         self.update()
         print("Good settings: ", self.good_time_settings())
-    
+
+    def on_left_click(self, event):
+        x, y = event.x, event.y
+        # Check if the click was inside the box
+        for box in self.box_list:
+            if Box.check_point_inside_box(box, (x, y)):
+                if self.box_monitored_index is not None:
+                    # Unhighlight previously monitored box
+                    self.box_list[self.box_monitored_index].set_highlight(False)
+                # Highlight new monitored box
+                self.box_monitored_index = self.box_list.index(box)
+                box.set_highlight(True)
+                return
+            
+        # Reset if no box is clicked
+        if self.box_monitored_index is not None:
+            self.box_list[self.box_monitored_index].change_color(self.config["box"]["color"])
+            self.box_monitored_index = None
+
     def key_press(self, event):
         key = event.keysym.lower()
 
         if key == "space": self.paused = not self.paused  # Toggle pause
         if key == "m":
-            self.manual_control_one_box = not self.manual_control_one_box # Toggle manual control
+            self.manual_control_one_box = not self.manual_control_one_box  # Toggle manual control
             self.box_list[self.box_manual_control_index].toggle_manual_control()
         elif key == "escape": self.root.quit()  # Exit on Escape key
         
@@ -74,10 +100,11 @@ class MyScreen:
             self.root.after(ms = self.config["ms_between_frames"], func = self.update)
             return
 
-        #print("Food in vision count:", len(self.box_list[self.box_monitored_index].food_in_vision))
-        #print(self.box_list[self.box_monitored_index].food_in_vision)
-        #print("Box in vision count:", len(self.box_list[self.box_monitored_index].box_in_vision))
-        #print(self.box_list[self.box_monitored_index].box_in_vision)
+        if self.box_monitored_index is not None:
+            print("Food in vision count:", len(self.box_list[self.box_monitored_index].food_in_vision))
+            #print(self.box_list[self.box_monitored_index].food_in_vision)
+            print("Box in vision count:", len(self.box_list[self.box_monitored_index].box_in_vision))
+            #print(self.box_list[self.box_monitored_index].box_in_vision)
 
         if self.spawn_food_event:
             #Spawn food randomly
@@ -123,7 +150,7 @@ class MyScreen:
 
     def check_collisions_post_move(self, direction, box_index):
         collision = False
-        collision |= Box.check_screen_border_collision(self.box_list[box_index], direction, self.width, self.height)
+        collision |= Box.check_screen_border_collision(self.box_list[box_index], direction, self.world_width, self.world_height)
         for i, box in enumerate(self.box_list):
             if i != box_index:
                 collision |= Box.check_box_collision(self.box_list[box_index], box, direction)  
