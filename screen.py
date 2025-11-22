@@ -61,6 +61,7 @@ class MyScreen:
         self.possible_directions = config["possible_directions"]
         self.config_colors = self.config["colors"]
         self.random_walk = self.config["box_random_walk"]
+        self.starving_mechanism = self.config["starving_mechanism"]
         self.spawn_food_event = self.config["spawn_food_event"]
         self.last_update_time_spawn_food = time.time()
         self.last_update_time_move = time.time()
@@ -74,6 +75,7 @@ class MyScreen:
         self.box_monitored_score_var = tk.StringVar(value="None")
         self.box_monitored_view_box_var = tk.StringVar(value="None")
         self.box_monitored_view_food_var = tk.StringVar(value="None")
+        self.box_monitored_energy_var = tk.StringVar(value="None")
         info_frame = tk.Frame(dashboard_frame, bg="white", highlightbackground="black", highlightthickness=1)
         info_frame.place(x=10, y=10)  # posizione dentro il dashboard_canvas
         tk.Label(info_frame, text="Box Index:", bg="white", anchor="w").grid(row=0, column=0, sticky="w")
@@ -84,7 +86,8 @@ class MyScreen:
         tk.Label(info_frame, textvariable=self.box_monitored_view_box_var, bg="white", anchor="w").grid(row=2, column=1, sticky="w")
         tk.Label(info_frame, text="View Food:", bg="white", anchor="w").grid(row=3, column=0, sticky="w")
         tk.Label(info_frame, textvariable=self.box_monitored_view_food_var, bg="white", anchor="w").grid(row=3, column=1, sticky="w")
-        
+        tk.Label(info_frame, text="Energy:", bg="white", anchor="w").grid(row=4, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.box_monitored_energy_var, bg="white", anchor="w").grid(row=4, column=1, sticky="w")
         self.update()
         
     def on_left_click(self, event):
@@ -142,13 +145,30 @@ class MyScreen:
         if self.paused:
             self.root.after(ms = self.config["ms_between_frames"], func = self.update)
             return
-
+             
+        if self.starving_mechanism:
+            #Check starving mechanism
+            for i, box in enumerate(self.box_list):
+                if box.energy <= 0:
+                    #Remove box from canvas and list
+                    self.world_canvas.delete(box.box)
+                    self.box_list[i].kill()
+                    del self.box_list[i]
+                    #If the removed box was monitored, clean dashboard
+                    if self.box_monitored_index == i:
+                        self.dashboard_box_highlight_clean()
+                        self.box_monitored_index = None
+                    elif self.box_monitored_index is not None and self.box_monitored_index > i:
+                        #Adjust monitored index if needed
+                        self.box_monitored_index -= 1
+        
         if self.box_monitored_index is not None:
             #Update dashboard info
             self.box_monitored_index_var.set(str(self.box_monitored_index))
             self.box_monitored_score_var.set(str(self.box_list[self.box_monitored_index].score))
             self.box_monitored_view_box_var.set(str(len(self.box_list[self.box_monitored_index].box_in_vision)))
             self.box_monitored_view_food_var.set(str(len(self.box_list[self.box_monitored_index].food_in_vision)))
+            self.box_monitored_energy_var.set(str(self.box_list[self.box_monitored_index].energy))
 
         if self.spawn_food_event:
             #Spawn food randomly
@@ -194,6 +214,7 @@ class MyScreen:
         self.box_monitored_score_var.set("None")
         self.box_monitored_view_box_var.set("None")
         self.box_monitored_view_food_var.set("None")
+        self.box_monitored_energy_var.set("None")
 
     def run(self):
         self.root.mainloop()

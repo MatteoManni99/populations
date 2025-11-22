@@ -42,11 +42,14 @@ class Box:
         self.possible_directions = config["possible_directions"]
         self.prev_direction = random.choice(self.possible_directions)
         self.score = 0
+        self.energy = config_box["initial_energy"]
         self.box_in_vision = []  # List of boxes currently in vision
         self.food_in_vision = []  # List of food currently in vision
 
 
     def move(self, direction):
+        self.energy -= self.config_box["move_energy_cost"]
+
         self.prev_direction = direction
         if direction == "right":
             self.coord[0] += self.speed
@@ -108,6 +111,10 @@ class Box:
     def change_color(self, color):
         self.canvas.itemconfig(self.box, fill=color)
     
+    def kill(self):
+        if self.vision_circle is not None:
+            self.canvas.delete(self.vision_circle)
+
     def reset_color(self):
         if self.manual_control:
             self.change_color(self.config["box"]["manual_color"])
@@ -224,6 +231,7 @@ class Box:
     def eat_food(self):
         self.change_dimensions(self.width + 2, self.height + 2)
         self.score += 1
+        self.energy = 100  # Reset energy upon eating
 
     def un_growth(self):
         self.change_dimensions(self.width - 2, self.height - 2)

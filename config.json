@@ -17,8 +17,9 @@
         "move_rate_ms": 40,
         "vision_range": 200,
         "manual_color": "yellow",
-        "highlight_color": "lightblue"
-        
+        "highlight_color": "lightblue",
+        "initial_energy": 100,
+        "move_energy_cost": 1
     },
     "food": {
         "width": 5,
@@ -32,6 +33,7 @@
     "plot_vision_range": true,
     "spawn_food_event": true,
     "box_random_walk": true,
+    "starving_mechanism": true,
     "possible_directions": ["up", "down", "left", "right"],
     "colors": ["red", "green", "blue", "yellow", "purple", "orange", "pink", "cyan", "magenta", "brown", "black", "white", "gray", "lightblue", "lightgreen"]
 }
