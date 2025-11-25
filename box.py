@@ -1,7 +1,7 @@
 import random
 
 class Box:
-    def __init__(self, canvas, x, y, config, config_box):
+    def __init__(self, canvas, x_world, y_world, config, config_box):
         self.config = config
         self.config_box = config_box
         self.width = config_box["width"]
@@ -10,7 +10,7 @@ class Box:
         self.growth_height_limit = config_box["growth_height_limit"]
         self.vision_range = config_box["vision_range"]
         self.canvas = canvas
-        self.coord = [x, y, x + self.width, y + self.height]
+        self.coord = [x_world, y_world, x_world + self.width, y_world + self.height]
         self.center = ((self.coord[0] + self.coord[2]) / 2, (self.coord[1] + self.coord[3]) / 2)
         self.box = canvas.create_rectangle(
             self.coord[0],
@@ -42,7 +42,7 @@ class Box:
         self.possible_directions = config["possible_directions"]
         self.prev_direction = random.choice(self.possible_directions)
         self.score = 0
-        self.energy = config_box["initial_energy"]
+        self.energy = float(config_box["initial_energy"])
         self.box_in_vision = []  # List of boxes currently in vision
         self.food_in_vision = []  # List of food currently in vision
 
@@ -114,6 +114,13 @@ class Box:
     def kill(self):
         if self.vision_circle is not None:
             self.canvas.delete(self.vision_circle)
+    
+    def try_mithosis(self):
+        if self.energy >= self.config_box["mithosis_energy_cost"]*2:
+            if random.random() < self.config_box["mithosis_chance"]:
+                self.energy -= self.config_box["mithosis_energy_cost"]
+                return True
+        return False
 
     def reset_color(self):
         if self.manual_control:
@@ -231,7 +238,7 @@ class Box:
     def eat_food(self):
         self.change_dimensions(self.width + 2, self.height + 2)
         self.score += 1
-        self.energy = 100  # Reset energy upon eating
+        self.energy += self.config_box["energy_per_food"]
 
     def un_growth(self):
         self.change_dimensions(self.width - 2, self.height - 2)

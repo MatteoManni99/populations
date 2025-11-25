@@ -18,8 +18,12 @@
         "vision_range": 200,
         "manual_color": "yellow",
         "highlight_color": "lightblue",
-        "initial_energy": 100,
-        "move_energy_cost": 1
+        "initial_energy": 50,
+        "move_energy_cost": 0.2,
+        "energy_per_food": 50,
+        "mithosis_energy_cost": 100,
+        "mithosis_rate_ms": 5000,
+        "mithosis_chance": 1
     },
     "food": {
         "width": 5,
@@ -34,6 +38,7 @@
     "spawn_food_event": true,
     "box_random_walk": true,
     "starving_mechanism": true,
+    "mithosis_mechanism": true,
     "possible_directions": ["up", "down", "left", "right"],
     "colors": ["red", "green", "blue", "yellow", "purple", "orange", "pink", "cyan", "magenta", "brown", "black", "white", "gray", "lightblue", "lightgreen"]
 }

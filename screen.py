@@ -27,7 +27,7 @@ class MyScreen:
             bg="lightgrey",
             width=self.config["dashboard_width"],
             height=self.config["dashboard_height"],
-            highlightthickness=0  # rimuove bordo grigio predefinito di Tkinter
+            highlightthickness = 0  # rimuove bordo grigio predefinito di Tkinter
         )
         dashboard_canvas.pack(
             padx=(padding, 0),
@@ -37,7 +37,7 @@ class MyScreen:
         world_frame = tk.Frame(
             self.root,
             bg="black",
-            highlightthickness=0
+            highlightthickness = 0
         )
         world_frame.pack(side="left", fill="both", expand=True)
         self.world_canvas = tk.Canvas(
@@ -45,7 +45,7 @@ class MyScreen:
             bg="white",
             width=self.config["world_width"],
             height=self.config["world_height"],
-            highlightthickness=0  # rimuove bordo grigio predefinito di Tkinter
+            highlightthickness = 0  # rimuove bordo grigio predefinito di Tkinter
         )
         self.world_canvas.pack(padx=padding, pady=padding)
 
@@ -62,9 +62,11 @@ class MyScreen:
         self.config_colors = self.config["colors"]
         self.random_walk = self.config["box_random_walk"]
         self.starving_mechanism = self.config["starving_mechanism"]
+        self.mithosis_mechanism = self.config["mithosis_mechanism"]
         self.spawn_food_event = self.config["spawn_food_event"]
         self.last_update_time_spawn_food = time.time()
         self.last_update_time_move = time.time()
+        self.last_update_time_mithosis = time.time()
         self.manual_control_one_box = False
         self.box_manual_control_index = 0  # Index of the box under manual control
         self.box_monitored_index = None  # Index of the box being monitored
@@ -76,18 +78,25 @@ class MyScreen:
         self.box_monitored_view_box_var = tk.StringVar(value="None")
         self.box_monitored_view_food_var = tk.StringVar(value="None")
         self.box_monitored_energy_var = tk.StringVar(value="None")
+        self.population_var = tk.StringVar(value = str(len(self.box_list)))
+
         info_frame = tk.Frame(dashboard_frame, bg="white", highlightbackground="black", highlightthickness=1)
         info_frame.place(x=10, y=10)  # posizione dentro il dashboard_canvas
-        tk.Label(info_frame, text="Box Index:", bg="white", anchor="w").grid(row=0, column=0, sticky="w")
-        tk.Label(info_frame, textvariable=self.box_monitored_index_var, bg="white", anchor="w").grid(row=0, column=1, sticky="w")
-        tk.Label(info_frame, text="Score:", bg="white", anchor="w").grid(row=1, column=0, sticky="w")
-        tk.Label(info_frame, textvariable=self.box_monitored_score_var, bg="white", anchor="w").grid(row=1, column=1, sticky="w")
-        tk.Label(info_frame, text="View Box:", bg="white", anchor="w").grid(row=2, column=0, sticky="w")
-        tk.Label(info_frame, textvariable=self.box_monitored_view_box_var, bg="white", anchor="w").grid(row=2, column=1, sticky="w")
-        tk.Label(info_frame, text="View Food:", bg="white", anchor="w").grid(row=3, column=0, sticky="w")
-        tk.Label(info_frame, textvariable=self.box_monitored_view_food_var, bg="white", anchor="w").grid(row=3, column=1, sticky="w")
-        tk.Label(info_frame, text="Energy:", bg="white", anchor="w").grid(row=4, column=0, sticky="w")
-        tk.Label(info_frame, textvariable=self.box_monitored_energy_var, bg="white", anchor="w").grid(row=4, column=1, sticky="w")
+        
+        tk.Label(info_frame, text="Population:", bg="white", anchor="w").grid(row=0, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.population_var, bg="white", anchor="w").grid(row=0, column=1, sticky="w")
+        tk.Label(info_frame, text="Box Index:", bg="white", anchor="w").grid(row=1, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.box_monitored_index_var, bg="white", anchor="w").grid(row=1, column=1, sticky="w")
+        tk.Label(info_frame, text="Score:", bg="white", anchor="w").grid(row=2, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.box_monitored_score_var, bg="white", anchor="w").grid(row=2, column=1, sticky="w")
+        tk.Label(info_frame, text="View Box:", bg="white", anchor="w").grid(row=3, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.box_monitored_view_box_var, bg="white", anchor="w").grid(row=3, column=1, sticky="w")
+        tk.Label(info_frame, text="View Food:", bg="white", anchor="w").grid(row=4, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.box_monitored_view_food_var, bg="white", anchor="w").grid(row=4, column=1, sticky="w")
+        tk.Label(info_frame, text="Energy:", bg="white", anchor="w").grid(row=5, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.box_monitored_energy_var, bg="white", anchor="w").grid(row=5, column=1, sticky="w")
+        
+        #self.population_var.set(str(len(self.box_list)))
         self.update()
         
     def on_left_click(self, event):
@@ -161,14 +170,31 @@ class MyScreen:
                     elif self.box_monitored_index is not None and self.box_monitored_index > i:
                         #Adjust monitored index if needed
                         self.box_monitored_index -= 1
-        
+                    #Update dashboard population
+                    self.population_var.set(str(len(self.box_list)))
+
+        if self.mithosis_mechanism:
+            #Check mithosis mechanism
+            elapsed = time.time() - self.last_update_time_mithosis
+            if elapsed >= self.config["box"]["mithosis_rate_ms"]/1000:
+                self.last_update_time_mithosis = time.time()
+                new_boxes = []
+                for i, box in enumerate(self.box_list):
+                    if(box.try_mithosis()):
+                        #TODO check space availability for new box
+                        new_box = Box(self.world_canvas, box.coord[0]+box.width+1, box.coord[1]+ box.height+1, self.config, self.config["box"])
+                        new_boxes.append(new_box)
+                        #Update dashboard population
+                self.box_list.extend(new_boxes)
+                self.population_var.set(str(len(self.box_list)))
+
         if self.box_monitored_index is not None:
             #Update dashboard info
             self.box_monitored_index_var.set(str(self.box_monitored_index))
             self.box_monitored_score_var.set(str(self.box_list[self.box_monitored_index].score))
             self.box_monitored_view_box_var.set(str(len(self.box_list[self.box_monitored_index].box_in_vision)))
             self.box_monitored_view_food_var.set(str(len(self.box_list[self.box_monitored_index].food_in_vision)))
-            self.box_monitored_energy_var.set(str(self.box_list[self.box_monitored_index].energy))
+            self.box_monitored_energy_var.set(f"{self.box_list[self.box_monitored_index].energy:.2f}")
 
         if self.spawn_food_event:
             #Spawn food randomly
@@ -248,7 +274,9 @@ class MyScreen:
             self.config["food"]["spawn_rate_ms"] % self.config["ms_between_frames"] == 0 and \
             self.config["food"]["spawn_rate_ms"] >= self.config["ms_between_frames"] and \
             self.config["box"]["move_rate_ms"] % self.config["ms_between_frames"] == 0 and \
-            self.config["box"]["move_rate_ms"] >= self.config["ms_between_frames"] \
+            self.config["box"]["move_rate_ms"] >= self.config["ms_between_frames"] and \
+            self.config["box"]["mithosis_rate_ms"] % self.config["ms_between_frames"] == 0 and \
+            self.config["box"]["mithosis_rate_ms"] >= self.config["ms_between_frames"] \
         )
     
     def good_size_settings(self):
