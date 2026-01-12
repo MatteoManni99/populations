@@ -6,18 +6,12 @@ Small flexible fully-connected neural network in PyTorch (Classification)
 - Methods to set/get layer parameters (weights and biases)
 - Helpers: predict_proba, predict, evaluate (accuracy on a DataLoader), save/load
 - No training loop included (as requested)
-
-Usage:
-    python pytorch_fcnet.py
-
-Requires: torch
 """
 
 from typing import List, Optional, Sequence, Tuple, Union
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-
 
 class FCClassifier(nn.Module):
     """Fully-connected classifier with N Linear layers.
@@ -35,7 +29,7 @@ class FCClassifier(nn.Module):
     def __init__(
         self,
         layer_sizes: Sequence[int],
-        activations: Union[str, Sequence[str]] = "relu",
+        activations: Sequence[str],
         bias: bool = True,
         init: Optional[str] = "xavier",
     ) -> None:
@@ -45,14 +39,6 @@ class FCClassifier(nn.Module):
 
         self.layer_sizes = list(layer_sizes)
         n_layers = len(self.layer_sizes) - 1
-
-        # Normalize activations to list of length n_layers
-        if isinstance(activations, str):
-            activations = [activations] * n_layers
-        else:
-            if len(activations) != n_layers:
-                raise ValueError("activations length must match number of layers")
-            activations = list(activations)
 
         self.activations = activations
         self.bias = bias
@@ -83,6 +69,8 @@ class FCClassifier(nn.Module):
             return nn.Identity()
         if name == "leaky_relu":
             return nn.LeakyReLU()
+        if name == "softmax":
+            return nn.Softmax(dim=1)
         raise ValueError(f"Unsupported activation: {name}")
 
     def _initialize_weights(self, method: str) -> None:
@@ -121,17 +109,9 @@ class FCClassifier(nn.Module):
         return out
 
     # ----- Classification helpers -----
-    def predict_proba(self, x: torch.Tensor, dim: int = 1) -> torch.Tensor:
-        """Return class probabilities (softmax over logits)."""
-        self.eval()
-        with torch.no_grad():
-            logits = self.forward(x)
-            probs = torch.softmax(logits, dim=dim)
-        return probs
-
     def predict(self, x: torch.Tensor, dim: int = 1) -> torch.Tensor:
         """Return predicted class indices (argmax over probabilities)."""
-        probs = self.predict_proba(x, dim=dim)
+        probs = self.forward(x)
         return torch.argmax(probs, dim=dim)
 
     def evaluate(self, dataloader: DataLoader, device: Optional[torch.device] = None) -> float:
@@ -213,8 +193,8 @@ class FCClassifier(nn.Module):
         self.load_state_dict(state)
 
 
-# Example usage
-def example_usage():
+# Usage example
+def usage_example():
     # esempio: classificatore 4 -> 8 -> 3 (3 classi)
     net = FCClassifier([4, 8, 3], activations=["relu", "identity"], bias=True, init="xavier")
     print(net)

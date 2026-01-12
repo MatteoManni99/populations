@@ -50,8 +50,7 @@ class MyScreen:
         self.world_canvas.pack(padx=padding, pady=padding)
 
         self.box_list = []
-        for i in range(self.config["num_boxes"]):
-            self.box_list.append(Box(self.world_canvas, i*40, i*10, self.config, self.config["box"]))
+        self.spawn_boxes()
         self.food_list = []
 
         self.world_canvas.bind("<Button-1>", self.on_left_click)
@@ -71,6 +70,7 @@ class MyScreen:
         self.box_manual_control_index = 0  # Index of the box under manual control
         self.box_monitored_index = None  # Index of the box being monitored
         self.paused = False
+        self.generations = 0
 
         # Dashboard info labels
         self.box_monitored_index_var = tk.StringVar(value="None")
@@ -98,7 +98,11 @@ class MyScreen:
         
         #self.population_var.set(str(len(self.box_list)))
         self.update()
-        
+    
+    def spawn_boxes(self):
+        for i in range(self.config["num_boxes"]):
+            self.box_list.append(Box(self.world_canvas, i*40, i*10, self.config, self.config["box"]))
+    
     def on_left_click(self, event):
         x, y = event.x, event.y
         # Check if the click was inside the box
@@ -215,14 +219,14 @@ class MyScreen:
                 for i, box in enumerate(self.box_list):
                     if self.manual_control_one_box and i == self.box_manual_control_index:
                         continue
+                    
+                    #if brain is used then the box chooses direction with its brain
+                    direction = box.choose_direction(inertia_probability=0.95)
 
-                    direction = Box.choose_direction(box, inertia_probability=0.95)
                     if self.check_collisions_post_move(direction, i) is False:
                         box.move(direction)
                     else:
-                        # Collision detected, choose a new direction
-                        new_direction = Box.choose_direction(box, inertia_probability=0.0)
-                        box.set_direction(new_direction)
+                        box.damage_energy(self.config["box"]["collision_energy_cost"])
                     box.box_update()
                 
                 #Try to eat food
@@ -232,7 +236,15 @@ class MyScreen:
                 #Update elements in vision
                 for box in self.box_list:
                     box.update_elements_in_vision(self.food_list, self.box_list)
-
+        
+        # Check end of generation
+        if not self.box_list:
+            self.generations += 1
+            print(f"Generation {self.generations} ended. Starting new generation.")
+            # Restart simulation with new boxes
+            self.spawn_boxes()
+            self.population_var.set(str(len(self.box_list)))
+        
         self.root.after(ms = self.config["ms_between_frames"], func = self.update) #(ms = , funztion = self.update)
 
     def dashboard_box_highlight_clean(self):

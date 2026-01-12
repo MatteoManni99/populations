@@ -19,11 +19,23 @@
         "manual_color": "yellow",
         "highlight_color": "lightblue",
         "initial_energy": 50,
-        "move_energy_cost": 0.2,
+        "move_energy_cost": 0.3,
+        "collision_energy_cost": 5,
         "energy_per_food": 50,
         "mithosis_energy_cost": 100,
         "mithosis_rate_ms": 5000,
-        "mithosis_chance": 1
+        "mithosis_chance": 1,
+        "use_nn_brain": false,
+        "number_of_food_that_brain_can_manage": 1,
+        "nn_brain_structure": {
+            "layers": [5, 4, 4],
+            "activations": ["relu", "softmax"],
+            "bias": false,
+            "init": "xavier"
+        },
+        "brain_mutations": true,
+        "brain_mutation_rate_pre_move": 0.1,
+        "brain_mutation_coefficient": 0.5
     },
     "food": {
         "width": 5,

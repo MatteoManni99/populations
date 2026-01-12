@@ -1,4 +1,7 @@
 import random
+import torch
+import brain
+from utils import normalize_coord, normalize_coords
 
 class Box:
     def __init__(self, canvas, x_world, y_world, config, config_box):
@@ -45,8 +48,46 @@ class Box:
         self.energy = float(config_box["initial_energy"])
         self.box_in_vision = []  # List of boxes currently in vision
         self.food_in_vision = []  # List of food currently in vision
+        if config_box["use_nn_brain"]:
+            self.brain = brain.FCClassifier(
+                layer_sizes=config_box["nn_brain_structure"]["layers"],
+                activations=config_box["nn_brain_structure"]["activations"],
+                bias=config_box["nn_brain_structure"]["bias"],
+                init=config_box["nn_brain_structure"]["init"]
+            )
 
-
+    def choose_direction(self, inertia_probability = 0.95, direction=None):
+        if direction is None:
+            if (self.config_box["use_nn_brain"]):
+                # Use neural network to choose direction based on position of nearest food and boxes
+                list_of_inputs = []
+                list_of_inputs.extend(normalize_coords(self.center[0], self.center[1], self.config["world_width"], self.config["world_height"]))  # Normalized x,y position
+                
+                # Nearest food
+                for i in range(self.config_box["number_of_food_that_brain_can_manage"]):
+                    if i < len(self.food_in_vision):
+                        food = self.food_in_vision[i]["food"]
+                        # Lower distance means higher input value
+                        list_of_inputs.append(1 / (self.food_in_vision[i]["distance"]/self.vision_range))  # Normalized vicinity
+                        # Normalized position
+                        list_of_inputs.extend(normalize_coords(food.center[0], food.center[1], self.config["world_width"], self.config["world_height"]))  # Normalized x,y position
+                    else:
+                        # No food available, fill with max vicinity and zero position. Neural network should learn to ignore these.
+                        list_of_inputs.append(0.0)
+                        list_of_inputs.extend([0.0, 0.0])
+                
+                input_tensor = torch.tensor([list_of_inputs], dtype=torch.float32)
+                output = self.brain.predict(input_tensor)
+                direction_index = output.item()
+                return self.possible_directions[direction_index]
+            
+            elif random.random() > inertia_probability:
+                return random.choice(self.possible_directions)
+            else:
+                return self.prev_direction
+        else:
+            return direction
+        
     def move(self, direction):
         self.energy -= self.config_box["move_energy_cost"]
 
@@ -63,6 +104,14 @@ class Box:
         elif direction == "down":
             self.coord[1] += self.speed
             self.coord[3] += self.speed
+
+        #TODO: create a dedicated method for brain mutation
+        if (self.config_box["use_nn_brain"] and self.config_box["brain_mutations"]):
+                # Mutate brain before move
+                for param in self.brain.parameters():
+                    if random.random() < self.config_box["brain_mutation_rate_pre_move"]:
+                        noise = torch.randn_like(param) * self.config_box["brain_mutation_coefficient"]
+                        param.data.add_(noise)
 
     def set_direction(self, direction):
         self.prev_direction = direction
@@ -91,6 +140,9 @@ class Box:
         ]
         self.center = ((self.coord[0] + self.coord[2]) / 2, (self.coord[1] + self.coord[3]) / 2)
     
+    def damage_energy(self, amount):
+        self.energy -= amount
+
     def update_elements_in_vision(self, food_list, box_list):
         # Update food in vision
         self.food_in_vision = []
@@ -107,6 +159,10 @@ class Box:
             distance = ((self.center[0] - box.center[0]) ** 2 + (self.center[1] - box.center[1]) ** 2) ** 0.5
             if distance <= self.vision_range:
                 self.box_in_vision.append({"distance": distance, "box": box})
+    
+    def order_elements_in_vision_by_distance(self):
+        self.food_in_vision.sort(key=lambda x: x["distance"])
+        self.box_in_vision.sort(key=lambda x: x["distance"])
 
     def change_color(self, color):
         self.canvas.itemconfig(self.box, fill=color)
@@ -138,12 +194,6 @@ class Box:
         self.highlighted = highlighted
         self.reset_color()
 
-    @staticmethod
-    def choose_direction(box, inertia_probability = 0.95):
-        if random.random() > inertia_probability:
-            return random.choice(box.possible_directions)
-        else:
-            return box.prev_direction
     
     @staticmethod
     def check_box_collision(box1, box2, direction):
