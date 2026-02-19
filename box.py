@@ -1,6 +1,6 @@
 import random
 import torch
-import brain
+import brain as brn
 from utils import normalize_coord, normalize_coords
 
 class Box:
@@ -52,7 +52,7 @@ class Box:
             if brain is not None:
                 self.brain = brain
             else:
-                self.brain = brain.FCClassifier(
+                self.brain = brn.FCClassifier(
                     layer_sizes=config_box["nn_brain_structure"]["layers"],
                     activations=config_box["nn_brain_structure"]["activations"],
                     bias=config_box["nn_brain_structure"]["bias"],

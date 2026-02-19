@@ -26,7 +26,7 @@
         "mithosis_energy_cost": 100,
         "mithosis_rate_ms": 5000,
         "mithosis_chance": 1,
-        "use_nn_brain": false,
+        "use_nn_brain": true,
         "number_of_food_that_brain_can_manage": 1,
         "nn_brain_structure": {
             "layers": [5, 4, 4],
@@ -38,6 +38,7 @@
         "brain_mutation_rate_post_move": 0.01,
         "brain_mutation_coefficient": 0.5,
         "score_brain_deserving_mechanism": true,
+        "num_deserving_brains": 5,
         "score_time_rate_ms": 1000,
         "score_per_time_unit": 1
 

@@ -119,8 +119,11 @@ class MyScreen:
             #Spawn remaining boxes with new brains
             for i in range(num_deserving, self.config["num_boxes"]):
                 self.box_list.append(Box(self.world_canvas, i*40, i*10, self.config, self.config["box"]))
-        for i in range(self.config["num_boxes"]):
-            self.box_list.append(Box(self.world_canvas, i*40, i*10, self.config, self.config["box"]))
+        else:
+            for i in range(self.config["num_boxes"]):
+                self.box_list.append(Box(self.world_canvas, i*40, i*10, self.config, self.config["box"]))
+
+        print(f"Spawned {len(self.box_list)} boxes.")
     
     def on_left_click(self, event):
         x, y = event.x, event.y
@@ -270,7 +273,7 @@ class MyScreen:
                 for box in self.box_list:
                     box.update_elements_in_vision(self.food_list, self.box_list)
         
-        # Score updates and other per-frame logic
+        # Score updates using per-frame logic
         if self.score_brain_deserving_mechanism:
             elapsed = time.time() - self.last_update_time_score
             if elapsed >= (self.config["box"]["score_time_rate_ms"]/1000) / self.simulation_acceleration_factor:
