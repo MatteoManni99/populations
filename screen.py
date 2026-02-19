@@ -1,3 +1,4 @@
+import copy
 import time
 import tkinter as tk
 from box import Box
@@ -71,8 +72,14 @@ class MyScreen:
         self.box_monitored_index = None  # Index of the box being monitored
         self.paused = False
         self.generations = 0
+        self.score_brain_deserving_mechanism = self.config["box"]["score_brain_deserving_mechanism"]
+        self.deserving_brains = []
+        self.last_update_time_score = time.time()
+
+        self.simulation_acceleration_factor = self.config["simulation_acceleration_factor"]
 
         # Dashboard info labels
+        self.generations_var = tk.StringVar(value=str(self.generations))
         self.box_monitored_index_var = tk.StringVar(value="None")
         self.box_monitored_score_var = tk.StringVar(value="None")
         self.box_monitored_view_box_var = tk.StringVar(value="None")
@@ -83,23 +90,35 @@ class MyScreen:
         info_frame = tk.Frame(dashboard_frame, bg="white", highlightbackground="black", highlightthickness=1)
         info_frame.place(x=10, y=10)  # posizione dentro il dashboard_canvas
         
-        tk.Label(info_frame, text="Population:", bg="white", anchor="w").grid(row=0, column=0, sticky="w")
-        tk.Label(info_frame, textvariable=self.population_var, bg="white", anchor="w").grid(row=0, column=1, sticky="w")
-        tk.Label(info_frame, text="Box Index:", bg="white", anchor="w").grid(row=1, column=0, sticky="w")
-        tk.Label(info_frame, textvariable=self.box_monitored_index_var, bg="white", anchor="w").grid(row=1, column=1, sticky="w")
-        tk.Label(info_frame, text="Score:", bg="white", anchor="w").grid(row=2, column=0, sticky="w")
-        tk.Label(info_frame, textvariable=self.box_monitored_score_var, bg="white", anchor="w").grid(row=2, column=1, sticky="w")
-        tk.Label(info_frame, text="View Box:", bg="white", anchor="w").grid(row=3, column=0, sticky="w")
-        tk.Label(info_frame, textvariable=self.box_monitored_view_box_var, bg="white", anchor="w").grid(row=3, column=1, sticky="w")
-        tk.Label(info_frame, text="View Food:", bg="white", anchor="w").grid(row=4, column=0, sticky="w")
-        tk.Label(info_frame, textvariable=self.box_monitored_view_food_var, bg="white", anchor="w").grid(row=4, column=1, sticky="w")
-        tk.Label(info_frame, text="Energy:", bg="white", anchor="w").grid(row=5, column=0, sticky="w")
-        tk.Label(info_frame, textvariable=self.box_monitored_energy_var, bg="white", anchor="w").grid(row=5, column=1, sticky="w")
+        tk.Label(info_frame, text="Generations:", bg="white", anchor="w").grid(row=0, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.generations_var, bg="white", anchor="w").grid(row=0, column=1, sticky="w")
+        tk.Label(info_frame, text="Population:", bg="white", anchor="w").grid(row=1, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.population_var, bg="white", anchor="w").grid(row=1, column=1, sticky="w")
+        tk.Label(info_frame, text="Box Index:", bg="white", anchor="w").grid(row=2, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.box_monitored_index_var, bg="white", anchor="w").grid(row=2, column=1, sticky="w")
+        tk.Label(info_frame, text="Score:", bg="white", anchor="w").grid(row=3, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.box_monitored_score_var, bg="white", anchor="w").grid(row=3, column=1, sticky="w")
+        tk.Label(info_frame, text="View Box:", bg="white", anchor="w").grid(row=4, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.box_monitored_view_box_var, bg="white", anchor="w").grid(row=4, column=1, sticky="w")
+        tk.Label(info_frame, text="View Food:", bg="white", anchor="w").grid(row=5, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.box_monitored_view_food_var, bg="white", anchor="w").grid(row=5, column=1, sticky="w")
+        tk.Label(info_frame, text="Energy:", bg="white", anchor="w").grid(row=6, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.box_monitored_energy_var, bg="white", anchor="w").grid(row=6, column=1, sticky="w")
         
         #self.population_var.set(str(len(self.box_list)))
         self.update()
     
-    def spawn_boxes(self):
+    def spawn_boxes(self, brains = None):
+        if brains is not None and len(brains) > 0:
+            num_deserving = len(brains)
+            #Spawn deserving brains first
+            for i in range(num_deserving):
+                brain, score = brains[i]
+                box = Box(self.world_canvas, i*40, i*10, self.config, self.config["box"], brain=brain)
+                self.box_list.append(box)
+            #Spawn remaining boxes with new brains
+            for i in range(num_deserving, self.config["num_boxes"]):
+                self.box_list.append(Box(self.world_canvas, i*40, i*10, self.config, self.config["box"]))
         for i in range(self.config["num_boxes"]):
             self.box_list.append(Box(self.world_canvas, i*40, i*10, self.config, self.config["box"]))
     
@@ -164,9 +183,16 @@ class MyScreen:
             for i, box in enumerate(self.box_list):
                 if box.energy <= 0:
                     #Remove box from canvas and list
+                    if self.config["box"]["use_nn_brain"] and self.config["box"]["score_brain_deserving_mechanism"]:
+                        #Add brain to deserving list
+                        self.deserving_brains.append((box.brain, box.score))
+                        self.deserving_brains.sort(key=lambda x: x[1], reverse=True)
+                        if len(self.deserving_brains) > self.config["box"]["num_deserving_brains"]:
+                            self.deserving_brains.pop()
                     self.world_canvas.delete(box.box)
                     self.box_list[i].kill()
                     del self.box_list[i]
+
                     #If the removed box was monitored, clean dashboard
                     if self.box_monitored_index == i:
                         self.dashboard_box_highlight_clean()
@@ -180,13 +206,20 @@ class MyScreen:
         if self.mithosis_mechanism:
             #Check mithosis mechanism
             elapsed = time.time() - self.last_update_time_mithosis
-            if elapsed >= self.config["box"]["mithosis_rate_ms"]/1000:
+            if elapsed >= (self.config["box"]["mithosis_rate_ms"]/1000) / self.simulation_acceleration_factor:
                 self.last_update_time_mithosis = time.time()
                 new_boxes = []
                 for i, box in enumerate(self.box_list):
                     if(box.try_mithosis()):
                         #TODO check space availability for new box
-                        new_box = Box(self.world_canvas, box.coord[0]+box.width+1, box.coord[1]+ box.height+1, self.config, self.config["box"])
+                        if (self.config["box"]["use_nn_brain"]):
+                            new_box = Box(self.world_canvas,
+                                          box.coord[0]+box.width+1, box.coord[1]+ box.height+1,
+                                          self.config,
+                                          self.config["box"],
+                                          brain=copy.deepcopy(box.brain))
+                        else:
+                            new_box = Box(self.world_canvas, box.coord[0]+box.width+1, box.coord[1]+ box.height+1, self.config, self.config["box"])
                         new_boxes.append(new_box)
                         #Update dashboard population
                 self.box_list.extend(new_boxes)
@@ -203,7 +236,7 @@ class MyScreen:
         if self.spawn_food_event:
             #Spawn food randomly
             elapsed = time.time() - self.last_update_time_spawn_food
-            if elapsed >= self.config["food"]["spawn_rate_ms"]/1000:
+            if elapsed >= (self.config["food"]["spawn_rate_ms"]/1000) / self.simulation_acceleration_factor:
                 self.last_update_time_spawn_food = time.time()
                 if len(self.food_list) < self.config["food"]["max_food_items"]:
                     food = Food.spawn_food_event(self.world_canvas, self.config)
@@ -212,7 +245,7 @@ class MyScreen:
         if self.random_walk:
             #Move boxes randomly
             elapsed = time.time() - self.last_update_time_move
-            if elapsed >= self.config["box"]["move_rate_ms"]/1000:
+            if elapsed >= (self.config["box"]["move_rate_ms"]/1000) / self.simulation_acceleration_factor:
                 self.last_update_time_move = time.time()
                 
                 #Move boxes
@@ -237,15 +270,36 @@ class MyScreen:
                 for box in self.box_list:
                     box.update_elements_in_vision(self.food_list, self.box_list)
         
+        # Score updates and other per-frame logic
+        if self.score_brain_deserving_mechanism:
+            elapsed = time.time() - self.last_update_time_score
+            if elapsed >= (self.config["box"]["score_time_rate_ms"]/1000) / self.simulation_acceleration_factor:
+                self.last_update_time_score = time.time()
+                for box in self.box_list:
+                    box.score += self.config["box"]["score_per_time_unit"]
+            
+
         # Check end of generation
         if not self.box_list:
             self.generations += 1
-            print(f"Generation {self.generations} ended. Starting new generation.")
+            self.generations_var.set(str(self.generations))
+            print(f"Generation {self.generations} ended. Restarting simulation...")
+            self.clean_food_list()
             # Restart simulation with new boxes
-            self.spawn_boxes()
+            if self.score_brain_deserving_mechanism:
+                self.spawn_boxes(brains = self.deserving_brains)
+            else:
+                self.spawn_boxes(brains = None)
             self.population_var.set(str(len(self.box_list)))
         
-        self.root.after(ms = self.config["ms_between_frames"], func = self.update) #(ms = , funztion = self.update)
+        self.root.after(ms = int(self.config["ms_between_frames"] / self.simulation_acceleration_factor), func = self.update) #(ms = , funztion = self.update)
+
+
+    def clean_food_list(self):
+        for food in self.food_list:
+            self.world_canvas.delete(food.box)
+        self.food_list = []
+    
 
     def dashboard_box_highlight_clean(self):
         self.box_monitored_index_var.set("None")

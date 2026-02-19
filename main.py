@@ -1,9 +1,5 @@
 import json
-
-import torch
 from screen import MyScreen
-from brain import FCClassifier
-
 
 with open('config.json', 'r') as file:
     config = json.load(file)

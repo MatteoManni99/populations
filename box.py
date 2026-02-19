@@ -4,7 +4,7 @@ import brain
 from utils import normalize_coord, normalize_coords
 
 class Box:
-    def __init__(self, canvas, x_world, y_world, config, config_box):
+    def __init__(self, canvas, x_world, y_world, config, config_box, brain=None):
         self.config = config
         self.config_box = config_box
         self.width = config_box["width"]
@@ -49,11 +49,14 @@ class Box:
         self.box_in_vision = []  # List of boxes currently in vision
         self.food_in_vision = []  # List of food currently in vision
         if config_box["use_nn_brain"]:
-            self.brain = brain.FCClassifier(
-                layer_sizes=config_box["nn_brain_structure"]["layers"],
-                activations=config_box["nn_brain_structure"]["activations"],
-                bias=config_box["nn_brain_structure"]["bias"],
-                init=config_box["nn_brain_structure"]["init"]
+            if brain is not None:
+                self.brain = brain
+            else:
+                self.brain = brain.FCClassifier(
+                    layer_sizes=config_box["nn_brain_structure"]["layers"],
+                    activations=config_box["nn_brain_structure"]["activations"],
+                    bias=config_box["nn_brain_structure"]["bias"],
+                    init=config_box["nn_brain_structure"]["init"]
             )
 
     def choose_direction(self, inertia_probability = 0.95, direction=None):
@@ -107,9 +110,9 @@ class Box:
 
         #TODO: create a dedicated method for brain mutation
         if (self.config_box["use_nn_brain"] and self.config_box["brain_mutations"]):
-                # Mutate brain before move
+                # Mutate brain post move
                 for param in self.brain.parameters():
-                    if random.random() < self.config_box["brain_mutation_rate_pre_move"]:
+                    if random.random() < self.config_box["brain_mutation_rate_post_move"]:
                         noise = torch.randn_like(param) * self.config_box["brain_mutation_coefficient"]
                         param.data.add_(noise)
 
@@ -287,7 +290,7 @@ class Box:
 
     def eat_food(self):
         self.change_dimensions(self.width + 2, self.height + 2)
-        self.score += 1
+        self.score += 10
         self.energy += self.config_box["energy_per_food"]
 
     def un_growth(self):

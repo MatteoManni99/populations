@@ -5,6 +5,7 @@
     "world_width": 1200,
     "world_height": 700,
     "num_boxes": 10,
+    "simulation_acceleration_factor": 20,
     "box": {
         "width": 10,
         "height": 10,
@@ -34,8 +35,12 @@
             "init": "xavier"
         },
         "brain_mutations": true,
-        "brain_mutation_rate_pre_move": 0.1,
-        "brain_mutation_coefficient": 0.5
+        "brain_mutation_rate_post_move": 0.01,
+        "brain_mutation_coefficient": 0.5,
+        "score_brain_deserving_mechanism": true,
+        "score_time_rate_ms": 1000,
+        "score_per_time_unit": 1
+
     },
     "food": {
         "width": 5,
