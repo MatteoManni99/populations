@@ -10,5 +10,5 @@ with open('config.json', 'r') as file:
     # print(net.predict(torch.ones(1, 17)))
     # print(net.predict(torch.randn(1, 17)))
     
-    app = MyScreen(config)
+    app = MyScreen(config) 
     app.run()

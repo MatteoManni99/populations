@@ -39,6 +39,7 @@
         "brain_mutation_coefficient": 0.5,
         "score_brain_deserving_mechanism": true,
         "num_deserving_brains": 5,
+        "deserving_box_color": "lightblue",
         "score_time_rate_ms": 1000,
         "score_per_time_unit": 1
 

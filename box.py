@@ -1,10 +1,12 @@
+from fileinput import filename
 import random
+from time import time
 import torch
 import brain as brn
 from utils import normalize_coord, normalize_coords
 
 class Box:
-    def __init__(self, canvas, x_world, y_world, config, config_box, brain=None):
+    def __init__(self, canvas, x_spawn, y_spawn, config, config_box, brain=None):
         self.config = config
         self.config_box = config_box
         self.width = config_box["width"]
@@ -13,7 +15,7 @@ class Box:
         self.growth_height_limit = config_box["growth_height_limit"]
         self.vision_range = config_box["vision_range"]
         self.canvas = canvas
-        self.coord = [x_world, y_world, x_world + self.width, y_world + self.height]
+        self.coord = [x_spawn, y_spawn, x_spawn + self.width, y_spawn + self.height]
         self.center = ((self.coord[0] + self.coord[2]) / 2, (self.coord[1] + self.coord[3]) / 2)
         self.box = canvas.create_rectangle(
             self.coord[0],
@@ -108,7 +110,7 @@ class Box:
             self.coord[1] += self.speed
             self.coord[3] += self.speed
 
-        #TODO: create a dedicated method for brain mutation
+        #TODO: create a dedicated method for brain mutation in the screen function, to avoid doing it every move and to be able to do it at specific moments (e.g. every X generations, or only for the best boxes, etc.)
         if (self.config_box["use_nn_brain"] and self.config_box["brain_mutations"]):
                 # Mutate brain post move
                 for param in self.brain.parameters():
@@ -197,6 +199,15 @@ class Box:
         self.highlighted = highlighted
         self.reset_color()
 
+    def score_update(self, amount):
+        self.score += amount
+    
+
+    @staticmethod
+    def save_deserving_brains(deserving_brains):
+        for i, (brain, score) in enumerate(deserving_brains):
+            filename = f"brains/brain_{i}_time_{time()}_score_{score:.2f}.pt"
+            torch.save(brain.state_dict(), filename)
     
     @staticmethod
     def check_box_collision(box1, box2, direction):

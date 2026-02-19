@@ -51,7 +51,7 @@ class MyScreen:
         self.world_canvas.pack(padx=padding, pady=padding)
 
         self.box_list = []
-        self.spawn_boxes()
+        self.spawn_boxes(brains=None)
         self.food_list = []
 
         self.world_canvas.bind("<Button-1>", self.on_left_click)
@@ -73,7 +73,11 @@ class MyScreen:
         self.paused = False
         self.generations = 0
         self.score_brain_deserving_mechanism = self.config["box"]["score_brain_deserving_mechanism"]
-        self.deserving_brains = []
+        if self.config["box"]["use_nn_brain"] and self.score_brain_deserving_mechanism:
+            self.deserving_brains = []
+            self.deserving_brains_ids = []
+        else:
+            self.deserving_brains = None
         self.last_update_time_score = time.time()
 
         self.simulation_acceleration_factor = self.config["simulation_acceleration_factor"]
@@ -86,6 +90,9 @@ class MyScreen:
         self.box_monitored_view_food_var = tk.StringVar(value="None")
         self.box_monitored_energy_var = tk.StringVar(value="None")
         self.population_var = tk.StringVar(value = str(len(self.box_list)))
+        self.deserving_brains_ids_var = tk.StringVar(
+            value="\n".join(str(t) for t in self.deserving_brains_ids)
+        )
 
         info_frame = tk.Frame(dashboard_frame, bg="white", highlightbackground="black", highlightthickness=1)
         info_frame.place(x=10, y=10)  # posizione dentro il dashboard_canvas
@@ -104,6 +111,8 @@ class MyScreen:
         tk.Label(info_frame, textvariable=self.box_monitored_view_food_var, bg="white", anchor="w").grid(row=5, column=1, sticky="w")
         tk.Label(info_frame, text="Energy:", bg="white", anchor="w").grid(row=6, column=0, sticky="w")
         tk.Label(info_frame, textvariable=self.box_monitored_energy_var, bg="white", anchor="w").grid(row=6, column=1, sticky="w")
+        tk.Label(info_frame, text="Deserving Brains:", bg="white", anchor="w").grid(row=7, column=0, sticky="w")
+        tk.Label(info_frame, textvariable=self.deserving_brains_ids_var, bg="white", anchor="w").grid(row=7, column=1, sticky="w")
         
         #self.population_var.set(str(len(self.box_list)))
         self.update()
@@ -113,15 +122,16 @@ class MyScreen:
             num_deserving = len(brains)
             #Spawn deserving brains first
             for i in range(num_deserving):
-                brain, score = brains[i]
-                box = Box(self.world_canvas, i*40, i*10, self.config, self.config["box"], brain=brain)
+                brain, _ = brains[i]
+                box = Box(self.world_canvas, 100 + i*70, self.config["world_height"]/2, self.config, self.config["box"], brain=brain)
+                box.change_color(self.config["box"]["deserving_box_color"])
                 self.box_list.append(box)
             #Spawn remaining boxes with new brains
             for i in range(num_deserving, self.config["num_boxes"]):
-                self.box_list.append(Box(self.world_canvas, i*40, i*10, self.config, self.config["box"]))
+                self.box_list.append(Box(self.world_canvas, 100 + i*70, self.config["world_height"]/2, self.config, self.config["box"]))
         else:
             for i in range(self.config["num_boxes"]):
-                self.box_list.append(Box(self.world_canvas, i*40, i*10, self.config, self.config["box"]))
+                self.box_list.append(Box(self.world_canvas, 100 + i*70, self.config["world_height"]/2, self.config, self.config["box"]))
 
         print(f"Spawned {len(self.box_list)} boxes.")
     
@@ -180,7 +190,7 @@ class MyScreen:
         if self.paused:
             self.root.after(ms = self.config["ms_between_frames"], func = self.update)
             return
-             
+
         if self.starving_mechanism:
             #Check starving mechanism
             for i, box in enumerate(self.box_list):
@@ -189,9 +199,14 @@ class MyScreen:
                     if self.config["box"]["use_nn_brain"] and self.config["box"]["score_brain_deserving_mechanism"]:
                         #Add brain to deserving list
                         self.deserving_brains.append((box.brain, box.score))
+                        self.deserving_brains_ids.append((self.generations, i, box.score))
                         self.deserving_brains.sort(key=lambda x: x[1], reverse=True)
+                        self.deserving_brains_ids.sort(key=lambda x: x[2], reverse=True)
                         if len(self.deserving_brains) > self.config["box"]["num_deserving_brains"]:
                             self.deserving_brains.pop()
+                            self.deserving_brains_ids.pop()
+                        self.deserving_brains_ids_var.set("\n".join(str(t) for t in self.deserving_brains_ids))
+                        
                     self.world_canvas.delete(box.box)
                     self.box_list[i].kill()
                     del self.box_list[i]
@@ -279,22 +294,22 @@ class MyScreen:
             if elapsed >= (self.config["box"]["score_time_rate_ms"]/1000) / self.simulation_acceleration_factor:
                 self.last_update_time_score = time.time()
                 for box in self.box_list:
-                    box.score += self.config["box"]["score_per_time_unit"]
-            
+                    box.score_update(self.config["box"]["score_per_time_unit"])
 
         # Check end of generation
         if not self.box_list:
             self.generations += 1
+            if ((self.generations%300) == 0) and self.config["box"]["use_nn_brain"] and self.score_brain_deserving_mechanism:
+                print("Saving deserving brains...")
+                Box.save_deserving_brains(self.deserving_brains)
+            
             self.generations_var.set(str(self.generations))
             print(f"Generation {self.generations} ended. Restarting simulation...")
             self.clean_food_list()
-            # Restart simulation with new boxes
-            if self.score_brain_deserving_mechanism:
-                self.spawn_boxes(brains = self.deserving_brains)
-            else:
-                self.spawn_boxes(brains = None)
+            # Restart simulation with new boxes with deserving brains if the mechanism is active, otherwise with new random brains
+            self.spawn_boxes(brains = self.deserving_brains)
             self.population_var.set(str(len(self.box_list)))
-        
+                
         self.root.after(ms = int(self.config["ms_between_frames"] / self.simulation_acceleration_factor), func = self.update) #(ms = , funztion = self.update)
 
 
