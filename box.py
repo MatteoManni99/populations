@@ -1,9 +1,8 @@
-from fileinput import filename
 import random
 from time import time
 import torch
 import brain as brn
-from utils import normalize_coord, normalize_coords
+from utils import normalize_coords
 
 class Box:
     def __init__(self, canvas, x_spawn, y_spawn, config, config_box, brain=None):
@@ -110,13 +109,6 @@ class Box:
             self.coord[1] += self.speed
             self.coord[3] += self.speed
 
-        #TODO: create a dedicated method for brain mutation in the screen function, to avoid doing it every move and to be able to do it at specific moments (e.g. every X generations, or only for the best boxes, etc.)
-        if (self.config_box["use_nn_brain"] and self.config_box["brain_mutations"]):
-                # Mutate brain post move
-                for param in self.brain.parameters():
-                    if random.random() < self.config_box["brain_mutation_rate_post_move"]:
-                        noise = torch.randn_like(param) * self.config_box["brain_mutation_coefficient"]
-                        param.data.add_(noise)
 
     def set_direction(self, direction):
         self.prev_direction = direction
@@ -204,9 +196,9 @@ class Box:
     
 
     @staticmethod
-    def save_deserving_brains(deserving_brains):
+    def save_deserving_brains(generation, deserving_brains):
         for i, (brain, score) in enumerate(deserving_brains):
-            filename = f"brains/brain_{i}_time_{time()}_score_{score:.2f}.pt"
+            filename = f"brains/brain_{i}__generations_{generation}_time_{time()}_score_{score:.2f}.pt"
             torch.save(brain.state_dict(), filename)
     
     @staticmethod

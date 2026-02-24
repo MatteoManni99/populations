@@ -1,5 +1,10 @@
 import copy
+from random import random
 import time
+
+
+import torch
+import torch
 import tkinter as tk
 from box import Box
 from food import Food
@@ -120,10 +125,22 @@ class MyScreen:
     def spawn_boxes(self, brains = None):
         if brains is not None and len(brains) > 0:
             num_deserving = len(brains)
+
             #Spawn deserving brains first
             for i in range(num_deserving):
                 brain, _ = brains[i]
-                box = Box(self.world_canvas, 100 + i*70, self.config["world_height"]/2, self.config, self.config["box"], brain=brain)
+                brain_copy = copy.deepcopy(brain)
+                # mutate brain with a mutation rate that can be configured, then spawn box with mutated brain
+                if self.config["box"]["brain_mutations"]:
+                    for param in brain_copy.parameters():
+                        if random() < self.config["box"]["brain_mutation_rate"]:
+                            print("Mutating brain parameter")
+                            print(i)
+                            print(param)
+                            noise = torch.randn_like(param) * self.config["box"]["brain_mutation_coefficient"]
+                            param.data.add_(noise)
+
+                box = Box(self.world_canvas, 100 + i*70, self.config["world_height"]/2, self.config, self.config["box"], brain=brain_copy)
                 box.change_color(self.config["box"]["deserving_box_color"])
                 self.box_list.append(box)
             #Spawn remaining boxes with new brains
@@ -301,7 +318,7 @@ class MyScreen:
             self.generations += 1
             if ((self.generations%300) == 0) and self.config["box"]["use_nn_brain"] and self.score_brain_deserving_mechanism:
                 print("Saving deserving brains...")
-                Box.save_deserving_brains(self.deserving_brains)
+                Box.save_deserving_brains(self.generations, self.deserving_brains)
             
             self.generations_var.set(str(self.generations))
             print(f"Generation {self.generations} ended. Restarting simulation...")
